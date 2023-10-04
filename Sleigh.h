@@ -46,16 +46,20 @@ public:
 		hAngle += uInfo.h_turning * 180.0f * deltaTime;
 		uInfo.h_turning = 0.0f;
 
+		vAngle += uInfo.v_turning * 180.0f * deltaTime;
+		uInfo.v_turning = 0.0f;
+		if (vAngle < -30.0f) vAngle = -30.0f;
+		else if (vAngle > 30.0f) vAngle = 30.0f;
+
 		dir[0] = cos(vAngle * 3.14f / 180) * sin(hAngle * 3.14f / 180);
-		dir[1] = sin(vAngle * 3.14f / 180);
+		dir[1] = -sin(vAngle * 3.14f / 180);
 		dir[2] = cos(vAngle * 3.14f / 180) * cos(hAngle * 3.14f / 180);
 
-		speed += uInfo.accelerating * 5.0f * deltaTime;
-		uInfo.accelerating = -1.0f;
+		speed += uInfo.accelerating * 10.0f * deltaTime;
 		if (speed < 0) speed = 0;
-		else if (speed > 8.0f) speed = 8.0f;
+		else if (speed > 10.0f) speed = 10.0f;
+		uInfo.accelerating = -1.0f;
 		for (int i  = 0; i < 3; i++) pos[i] += speed * dir[i] * deltaTime;
-		printf("%f %f %f %f\n", speed, pos[0], pos[1], pos[2]);
 
 		return uInfo;
 	}

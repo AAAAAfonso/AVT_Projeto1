@@ -200,8 +200,14 @@ void renderScene(void) {
 void processKeys(unsigned char key, int xx, int yy)
 {
 	switch(key) {
+		case 'w':
+			uInfo.v_turning = -1;
+			break;
 		case 'a':
 			uInfo.h_turning = 1;
+			break;
+		case 's':
+			uInfo.v_turning = 1;
 			break;
 		case 'd':
 			uInfo.h_turning = -1;

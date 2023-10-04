@@ -16,6 +16,7 @@
 #include <sstream>
 #include <string>
 
+
 // include GLEW to access OpenGL 3.3 functions
 #include <GL/glew.h>
 
@@ -37,6 +38,7 @@
 #include "render_info.h"
 #include "Terrain.h"
 #include "Sleigh.h"
+#include "Snowball.h"
 #include "Lamppost.h"
 
 
@@ -102,6 +104,7 @@ struct update_info uInfo = { 0.0f, 0.0f, 0.0f };
 Terrain* terrain;
 Sleigh* sleigh;
 Lamppost* lamppost;
+vector<SnowBall> snowballs;
 
 
 void timer(int value)
@@ -118,6 +121,9 @@ void timer(int value)
 void refresh(int value)
 {
 	sleigh->update(1.0f / FPS, &uInfo);
+	for (int i = 0; i < 4; i++) {
+		snowballs[i].updateSnowBallPosition(1.0f / FPS);
+	}
 
 	glutPostRedisplay();
 	glutTimerFunc(1000 / FPS, refresh, 0);
@@ -174,6 +180,7 @@ void renderScene(void) {
 
 	terrain->render(rInfo);
 	sleigh->render(rInfo);
+	for(int i = 0 ; i < 4; i++) snowballs[i].render(rInfo);
 	lamppost->render(rInfo);
 
 	//Render text (bitmap fonts) in screen coordinates. So use ortoghonal projection with viewport coordinates.
@@ -412,6 +419,9 @@ void init()
 
 	terrain = new Terrain(25.0f, 25.0f);
 	sleigh = new Sleigh(-0.5f, 0.0f, -0.5f, 0.0f);
+	for (int i = 0; i < 360; i += 360/4) {
+		snowballs.push_back(SnowBall(1.0f, i, 7.0f ));
+	}
 	lamppost = new Lamppost(4.0f, 4.0f);
 
 	// some GL settings

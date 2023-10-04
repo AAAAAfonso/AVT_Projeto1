@@ -1,0 +1,46 @@
+﻿  avtFreeType.cpp
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\avtFreeType.cpp(88,35): warning C4838: a conversão de 'unsigned int' em 'int' requer uma conversão de restrição
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\avtFreeType.cpp(88,62): warning C4838: a conversão de 'unsigned int' em 'int' requer uma conversão de restrição
+  AVTmathLib.cpp
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\AVTmathLib.cpp(145,11): warning C4244: 'inicializando': conversão de 'double' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\AVTmathLib.cpp(146,11): warning C4244: 'inicializando': conversão de 'double' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\AVTmathLib.cpp(234,10): warning C4244: 'inicializando': conversão de 'double' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\AVTmathLib.cpp(375,12): warning C4244: 'inicializando': conversão de 'double' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\AVTmathLib.cpp(402,13): warning C4244: 'return': conversão de 'double' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\AVTmathLib.cpp(443,62): warning C4244: '=': conversão de 'double' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\AVTmathLib.cpp(444,62): warning C4244: '=': conversão de 'double' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\AVTmathLib.cpp(446,40): warning C4244: '=': conversão de 'double' para 'float', possível perda de dados
+  basic_geometry.cpp
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\basic_geometry.cpp(171,32): warning C4267: 'argumento': conversão de 'size_t' para 'int', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\basic_geometry.cpp(293,44): warning C4244: '=': conversão de 'double' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\basic_geometry.cpp(295,44): warning C4244: '=': conversão de 'double' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\basic_geometry.cpp(298,48): warning C4244: '=': conversão de 'double' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\basic_geometry.cpp(300,48): warning C4244: '=': conversão de 'double' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\basic_geometry.cpp(316,45): warning C4244: '=': conversão de 'double' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\basic_geometry.cpp(318,45): warning C4244: '=': conversão de 'double' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\basic_geometry.cpp(321,53): warning C4244: '=': conversão de 'double' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\basic_geometry.cpp(323,53): warning C4244: '=': conversão de 'double' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\basic_geometry.cpp(407,11): warning C4244: '=': conversão de 'double' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\basic_geometry.cpp(415,11): warning C4244: '=': conversão de 'double' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\basic_geometry.cpp(435,11): warning C4244: '=': conversão de 'double' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\basic_geometry.cpp(456,48): warning C4244: '=': conversão de 'double' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\basic_geometry.cpp(457,48): warning C4244: '=': conversão de 'double' para 'float', possível perda de dados
+  lightDemo.cpp
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\Sleigh.h(47,21): warning C4244: '=': conversão de 'float' para 'short', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\Sleigh.h(54,25): warning C4244: '=': conversão de 'float' para 'short', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\lightDemo.cpp(93,30): warning C4838: a conversão de 'float' em 'short' requer uma conversão de restrição
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\lightDemo.cpp(93,30): warning C4244: 'inicializando': conversão de 'float' para 'short', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\lightDemo.cpp(93,36): warning C4838: a conversão de 'float' em 'short' requer uma conversão de restrição
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\lightDemo.cpp(93,36): warning C4244: 'inicializando': conversão de 'float' para 'short', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\lightDemo.cpp(93,42): warning C4838: a conversão de 'float' em 'short' requer uma conversão de restrição
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\lightDemo.cpp(93,42): warning C4244: 'inicializando': conversão de 'float' para 'short', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\lightDemo.cpp(185,103): warning C4244: 'argumento': conversão de 'int' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\lightDemo.cpp(185,70): warning C4244: 'argumento': conversão de 'int' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\lightDemo.cpp(185,53): warning C4244: 'argumento': conversão de 'int' para 'float', possível perda de dados
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\lightDemo.cpp(185,20): warning C4244: 'argumento': conversão de 'int' para 'float', possível perda de dados
+  Texture_Loader.cpp
+  vsShaderLib.cpp
+E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\vsShaderLib.cpp(569,18): warning C4267: '=': conversão de 'size_t' para 'int', possível perda de dados
+  Gerando Código...
+  AVT_Project_1.vcxproj -> E:\MEIC-A\1º Ano\1º Semestre\AVT - Animação e Visualização Tridimensional\Laboratory\AVT_Projeto1\x64\Debug\AVT_Project_1.exe
+  0 File(s) copied

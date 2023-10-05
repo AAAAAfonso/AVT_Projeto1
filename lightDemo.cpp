@@ -39,6 +39,7 @@
 #include "Terrain.h"
 #include "Sleigh.h"
 #include "Snowball.h"
+#include "Lamppost.h"
 #include "House.h"
 #include "Tree.h"
 
@@ -77,6 +78,9 @@ GLint vm_uniformId;
 GLint normal_uniformId;
 GLint lPos_uniformId;
 GLint tex_loc, tex_loc1, tex_loc2;
+
+GLint dirLPos_uniformId;
+GLint dirLToggled_uniformId;
 	
 // Camera Position
 float camX, camY, camZ;
@@ -91,14 +95,17 @@ float r = 10.0f;
 // Frame counting and FPS computation
 long myTime,timebase = 0,frame = 0;
 char s[32];
-float lightPos[4] = {4.0f, 6.0f, 2.0f, 1.0f};
+float dirLightPos[4] = {1.0f, -0.5f, 0.0f, 0.0f};
+
+bool dirLightToggled = true;
 
 
 struct update_info uInfo = { 0.0f, 0.0f, 0.0f };
 
 // Create objects
-Terrain *terrain;
+Terrain* terrain;
 Sleigh* sleigh;
+Lamppost* lamppost;
 vector<SnowBall> snowballs;
 vector<House> houses;
 vector<Tree> trees;
@@ -117,7 +124,7 @@ void timer(int value)
 
 void refresh(int value)
 {
-	uInfo = sleigh->update(1.0f / FPS, uInfo);
+	sleigh->update(1.0f / FPS, &uInfo);
 	for (int i = 0; i < 4; i++) {
 		snowballs[i].updateSnowBallPosition(1.0f / FPS);
 	}
@@ -169,8 +176,9 @@ void renderScene(void) {
 		//glUniform4fv(lPos_uniformId, 1, lightPos); //efeito capacete do mineiro, ou seja lighPos foi definido em eye coord 
 
 		float res[4];
-		multMatrixPoint(VIEW, lightPos,res);   //lightPos definido em World Coord so is converted to eye space
-		glUniform4fv(lPos_uniformId, 1, res);
+		multMatrixPoint(VIEW, dirLightPos, res);
+		glUniform4fv(dirLPos_uniformId, 1, res);
+		glUniform1i(dirLToggled_uniformId, dirLightToggled);
 
 	struct render_info rInfo = {shader, vm_uniformId, pvm_uniformId, normal_uniformId};
 
@@ -179,6 +187,7 @@ void renderScene(void) {
 	for (int i = 0; i < snowballs.size(); i++) snowballs[i].render(rInfo);
 	for (int i = 0; i < houses.size(); i++) houses[i].render(rInfo);
 	for (int i = 0; i < trees.size(); i++) trees[i].render(rInfo);
+	lamppost->render(rInfo);
 
 	//Render text (bitmap fonts) in screen coordinates. So use ortoghonal projection with viewport coordinates.
 	glDisable(GL_DEPTH_TEST);
@@ -228,6 +237,10 @@ void processKeys(unsigned char key, int xx, int yy)
 		case 'o':
 			uInfo.accelerating = 1;
 			break;
+		
+		case 'n':
+			dirLightToggled = !dirLightToggled;
+			break;
 
 		case 27:
 			glutLeaveMainLoop();
@@ -236,8 +249,8 @@ void processKeys(unsigned char key, int xx, int yy)
 		case 'c': 
 			printf("Camera Spherical Coordinates (%f, %f, %f)\n", alpha, beta, r);
 			break;
-		case 'm': glEnable(GL_MULTISAMPLE); break;
-		case 'n': glDisable(GL_MULTISAMPLE); break;
+		//case 'm': glEnable(GL_MULTISAMPLE); break;
+		//case 'n': glDisable(GL_MULTISAMPLE); break;
 	}
 }
 
@@ -362,10 +375,12 @@ GLuint setupShaders() {
 	pvm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_pvm");
 	vm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_viewModel");
 	normal_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_normal");
-	lPos_uniformId = glGetUniformLocation(shader.getProgramIndex(), "l_pos");
 	tex_loc = glGetUniformLocation(shader.getProgramIndex(), "texmap");
 	tex_loc1 = glGetUniformLocation(shader.getProgramIndex(), "texmap1");
 	tex_loc2 = glGetUniformLocation(shader.getProgramIndex(), "texmap2");
+
+	dirLPos_uniformId = glGetUniformLocation(shader.getProgramIndex(), "d_l_pos");
+	dirLToggled_uniformId = glGetUniformLocation(shader.getProgramIndex(), "dir_l_toggled");
 	
 	printf("InfoLog for Per Fragment Phong Lightning Shader\n%s\n\n", shader.getAllInfoLogs().c_str());
 
@@ -413,6 +428,7 @@ void init()
 	for (int i = 0; i < 360; i += 360/4) {
 		snowballs.push_back(SnowBall(1.0f, i, 7.0f ));
 	}
+	lamppost = new Lamppost(4.0f, 4.0f);
 
 	houses.push_back(House(2.0f, 4.0f));
 	houses.push_back(House(4.0f, 4.0f));

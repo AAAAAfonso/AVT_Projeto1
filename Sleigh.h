@@ -42,12 +42,12 @@ public:
 		return dir;
 	}
 
-	struct update_info update(float deltaTime, struct update_info uInfo) {
-		hAngle += uInfo.h_turning * 180.0f * deltaTime;
-		uInfo.h_turning = 0.0f;
+	void update(float deltaTime, struct update_info *uInfo) {
+		hAngle += uInfo->h_turning * 180.0f * deltaTime;
+		uInfo->h_turning = 0.0f;
 
-		vAngle += uInfo.v_turning * 180.0f * deltaTime;
-		uInfo.v_turning = 0.0f;
+		vAngle += uInfo->v_turning * 180.0f * deltaTime;
+		uInfo->v_turning = 0.0f;
 		if (vAngle < -30.0f) vAngle = -30.0f;
 		else if (vAngle > 30.0f) vAngle = 30.0f;
 
@@ -55,13 +55,11 @@ public:
 		dir[1] = -sin(vAngle * 3.14f / 180);
 		dir[2] = cos(vAngle * 3.14f / 180) * cos(hAngle * 3.14f / 180);
 
-		speed += uInfo.accelerating * 10.0f * deltaTime;
+		speed += uInfo->accelerating * 10.0f * deltaTime;
+		uInfo->accelerating = -1.0f;
 		if (speed < 0) speed = 0;
 		else if (speed > 10.0f) speed = 10.0f;
-		uInfo.accelerating = -1.0f;
 		for (int i  = 0; i < 3; i++) pos[i] += speed * dir[i] * deltaTime;
-
-		return uInfo;
 	}
 
 	void render(struct render_info rInfo) {

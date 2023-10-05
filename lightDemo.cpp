@@ -36,6 +36,8 @@
 
 #include <random>
 
+#include "Camera.h"
+
 #include "update_info.h"
 #include "render_info.h"
 #include "Terrain.h"
@@ -86,9 +88,6 @@ GLint dirLToggled_uniformId;
 vector<GLint> pointLPos_uniformIds;
 GLint pointLToggled_uniformId;
 
-// Camera Position
-float camX, camY, camZ;
-
 // Mouse Tracking Variables
 int startX, startY, tracking = 0;
 
@@ -104,6 +103,10 @@ float dirLightPos[4] = {1.0f, -0.5f, 0.0f, 0.0f};
 bool dirLightToggled = true;
 bool pointLightToggled = true;
 
+vector<Camera> cams;
+short active_camera = 0;
+
+float ratio = WinX / WinY;
 
 struct update_info uInfo = { 0.0f, 0.0f, 0.0f };
 
@@ -130,6 +133,7 @@ void timer(int value)
 void refresh(int value)
 {
 	sleigh->update(1.0f / FPS, &uInfo);
+	cams[2].update(sleigh->get_pos(), sleigh->get_direction());
 	for (int i = 0; i < 4; i++) {
 		snowballs[i].updateSnowBallPosition(1.0f / FPS);
 	}
@@ -145,7 +149,6 @@ void refresh(int value)
 
 void changeSize(int w, int h) {
 
-	float ratio;
 	// Prevent a divide by zero, when window is too short
 	if(h == 0)
 		h = 1;
@@ -171,7 +174,16 @@ void renderScene(void) {
 	loadIdentity(VIEW);
 	loadIdentity(MODEL);
 	// set the camera using a function similar to gluLookAt
-	lookAt(camX, camY, camZ, 0,0,0, 0,1,0);
+	loadIdentity(PROJECTION);
+	if (cams[active_camera].get_type() == 0) {
+		perspective(53.13f, ratio, 0.1f, 1000.0f);
+	}
+	else if (cams[active_camera].get_type() == 1) {
+		ortho(-12.5f * ratio, 12.5f * ratio, -12.5f, 12.5f, -1, 100);
+	}
+	lookAt(cams[active_camera].get_pos(0), cams[active_camera].get_pos(1), cams[active_camera].get_pos(2),
+		cams[active_camera].get_target(0), cams[active_camera].get_target(1), cams[active_camera].get_target(2),
+		cams[active_camera].get_up(0), cams[active_camera].get_up(1), cams[active_camera].get_up(2));
 
 	// use our shader
 	
@@ -217,7 +229,6 @@ void renderScene(void) {
 	loadIdentity(PROJECTION);
 	pushMatrix(VIEW);
 	loadIdentity(VIEW);
-	ortho(m_viewport[0], m_viewport[0] + m_viewport[2] - 1, m_viewport[1], m_viewport[1] + m_viewport[3] - 1, -1, 1);
 	popMatrix(PROJECTION);
 	popMatrix(VIEW);
 	popMatrix(MODEL);
@@ -249,6 +260,16 @@ void processKeys(unsigned char key, int xx, int yy)
 			break;
 		case 'o':
 			uInfo.accelerating = 1;
+			break;
+
+		case '1':
+			active_camera = 0;
+			break;
+		case '2':
+			active_camera = 1;
+			break;
+		case '3':
+			active_camera = 2;
 			break;
 		
 		case 'n':
@@ -338,9 +359,9 @@ void processMouseMotion(int xx, int yy)
 			rAux = 0.1f;
 	}
 
-	camX = rAux * sin(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f);
-	camZ = rAux * cos(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f);
-	camY = rAux *   						       sin(betaAux * 3.14f / 180.0f);
+	//camX = rAux * sin(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f);
+	//camZ = rAux * cos(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f);
+	//camY = rAux *   						       sin(betaAux * 3.14f / 180.0f);
 
 //  uncomment this if not using an idle or refresh func
 //	glutPostRedisplay();
@@ -353,9 +374,9 @@ void mouseWheel(int wheel, int direction, int x, int y) {
 	if (r < 0.1f)
 		r = 0.1f;
 
-	camX = r * sin(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f);
-	camZ = r * cos(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f);
-	camY = r *   						     sin(beta * 3.14f / 180.0f);
+	//camX = r * sin(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f);
+	//camZ = r * cos(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f);
+	//camY = r *   						     sin(beta * 3.14f / 180.0f);
 
 //  uncomment this if not using an idle or refresh func
 //	glutPostRedisplay();
@@ -442,15 +463,10 @@ void init()
 	/// Initialization of freetype library with font_name file
 	freeType_init(font_name);
 
-	// set the camera position based on its spherical coordinates
-	camX = r * sin(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f);
-	camZ = r * cos(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f);
-	camY = r *   						     sin(beta * 3.14f / 180.0f);
-
 	terrain = new Terrain(25.0f, 25.0f);
-	sleigh = new Sleigh(-0.5f, 0.0f, -0.5f, 0.0f);
-	for (int i = 0; i < 360; i += 360/4) {
-		snowballs.push_back(SnowBall(0.5f, i, 7.0f ));
+	sleigh = new Sleigh(0.0f, 0.0f, 0.0f, 0.0f);
+	for (int i = 0; i < 360; i += 360 / 4) {
+		snowballs.push_back(SnowBall(0.5f, i, 7.0f));
 	}
 	for (int i = 0; i < 6; i++) {
 		lampposts.push_back(Lamppost(5.0f * ((i % 3) - 1), 2.5f * ((i / 3) * 2 - 1)));
@@ -464,6 +480,12 @@ void init()
 		size = rand() % 15 * 0.01f + 0.05f;
 		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 24 - 11.5f + (rand() % 10) * 0.1f - 0.5, rand() % 6 + 6.5f + (rand() % 10) * 0.1f - 0.5));
 	}
+
+	cams.push_back(Camera(0.0f, 20.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1, 0, 0, 0));
+	cams.push_back(Camera(0.0f, 20.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1, 0, 0, 1));
+	cams.push_back(Camera(-sleigh->get_direction()[0] * 5.0f, -sleigh->get_direction()[1] * 5.0f + 2.0f, -sleigh->get_direction()[2] * 5.0f, 
+		sleigh->get_pos()[0], sleigh->get_pos()[1], sleigh->get_pos()[2], 
+		0, 1, 0, 0));
 
 	// some GL settings
 	glEnable(GL_DEPTH_TEST);

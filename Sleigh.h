@@ -22,6 +22,10 @@ public:
 		pos[0] = x; pos[1] = y; pos[2] = z; pos[3] = 0;
 		this->hAngle = hAngle;
 
+		dir[0] = cos(vAngle * 3.14f / 180) * sin(hAngle * 3.14f / 180);
+		dir[1] = -sin(vAngle * 3.14f / 180);
+		dir[2] = cos(vAngle * 3.14f / 180) * cos(hAngle * 3.14f / 180);
+
 		float amb[4] = { 0.2f, 0.15f, 0.1f, 1.0f };
 		float diff[4] = { 0.8f, 0.6f, 0.4f, 1.0f };
 		float spec[4] = { 0.8f, 0.8f, 0.8f, 1.0f };
@@ -40,6 +44,10 @@ public:
 
 	float *get_direction() {
 		return dir;
+	}
+
+	float *get_pos() {
+		return pos;
 	}
 
 	void update(float deltaTime, struct update_info *uInfo) {

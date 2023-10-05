@@ -35,7 +35,7 @@ private:
 		float post_shininess = 100.0f;
 		int post_texcount = 0;
 
-		post = createCylinder(1, 0.02, 8);
+		post = createCylinder(2.0f, 0.03, 8);
 		memcpy(post.mat.ambient, post_amb, 4 * sizeof(float));
 		memcpy(post.mat.diffuse, post_diff, 4 * sizeof(float));
 		memcpy(post.mat.specular, post_spec, 4 * sizeof(float));
@@ -53,7 +53,7 @@ public:
 
 	float *get_pointlight_pos() {
 		float *pos = new float[4];
-		pos[0] = x, pos[1] = 1.0f, pos[2] = z, pos[3] = 1.0f;
+		pos[0] = x, pos[1] = 2.5f, pos[2] = z, pos[3] = 1.0f;
 		return pos;
 	}
 
@@ -70,7 +70,7 @@ public:
 		glUniform1i(rInfo.textured_uniformId, false);
 
 		pushMatrix(MODEL);
-		translate(MODEL, x, 1.0f, z);
+		translate(MODEL, x, 2.0f, z);
 
 		// send matrices to OGL
 		computeDerivedMatrix(PROJ_VIEW_MODEL);
@@ -97,7 +97,7 @@ public:
 		glUniform1f(loc, post.mat.shininess);
 
 		pushMatrix(MODEL);
-		translate(MODEL, x, 0.5f, z);
+		translate(MODEL, x, 1.0f, z);
 
 		// send matrices to OGL
 		computeDerivedMatrix(PROJ_VIEW_MODEL);

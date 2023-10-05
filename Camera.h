@@ -8,9 +8,7 @@ private:
 public:
 	Camera(float pos_x, float pos_y, float pos_z, float target_x, float target_y, float target_z, float up_x, float up_y, float up_z, short type) {
 		pos[0] = pos_x, pos[1] = pos_y, pos[2] = pos_z;
-		printf("%f %f %f\n", pos_x, pos_y, pos_z);
 		target[0] = target_x, target[1] = target_y, target[2] = target_z;
-		printf("%f %f %f\n", target_x, target_y, target_z);
 		up[0] = up_x, up[1] = up_y, up[2] = up_z;
 		this->type = type;
 	}

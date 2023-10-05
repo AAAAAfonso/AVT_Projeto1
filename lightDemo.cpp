@@ -491,7 +491,7 @@ void init()
 	freeType_init(font_name);
 
 	terrain = new Terrain(25.0f, 25.0f);
-	sleigh = new Sleigh(0.0f, 0.0f, 0.0f, 0.0f);
+	sleigh = new Sleigh(0.0f, 0.0f, 0.0f, 90.0f);
 	for (int i = 0; i < 360; i += 360 / 4) {
 		snowballs.push_back(SnowBall(0.5f, i, 7.0f));
 	}

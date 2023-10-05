@@ -448,7 +448,7 @@ void init()
 	terrain = new Terrain(25.0f, 25.0f);
 	sleigh = new Sleigh(-0.5f, 0.0f, -0.5f, 0.0f);
 	for (int i = 0; i < 360; i += 360/4) {
-		snowballs.push_back(SnowBall(1.0f, i, 7.0f ));
+		snowballs.push_back(SnowBall(0.5f, i, 7.0f ));
 	}
 	for (int i = 0; i < 6; i++) {
 		lampposts.push_back(Lamppost(5.0f * ((i % 3) - 1), 2.5f * ((i / 3) * 2 - 1)));

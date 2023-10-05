@@ -17,41 +17,47 @@ private:
 	MyMesh house;
 	MyMesh rooftop;
 
+	void createMesh() {
+		float house_amb[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
+		float house_diff[4] = { 0.3f, 0.3f, 0.3f, 1.0f };
+		float house_spec[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
+		float house_emissive[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		float house_shininess = 100.0f;
+		int house_texcount = 0;
 
-	MyMesh createHouse() { return createCube(); }
-	MyMesh createRooftop() { return createCone(0.5f, 0.75f, 4); }
+		house = createCube();
+		memcpy(house.mat.ambient, house_amb, 4 * sizeof(float));
+		memcpy(house.mat.diffuse, house_diff, 4 * sizeof(float));
+		memcpy(house.mat.specular, house_spec, 4 * sizeof(float));
+		memcpy(house.mat.emissive, house_emissive, 4 * sizeof(float));
+		house.mat.shininess = house_shininess;
+		house.mat.texCount = house_texcount;
 
+		float rooftop_amb[4] = { 0.2f, 0.1f, 0.07f, 1.0f };
+		float rooftop_diff[4] = { 0.4f, 0.2f, 0.15f, 1.0f };
+		float rooftop_spec[4] = { 0.1f, 0.07f, 0.05f, 1.0f };
+		float rooftop_emissive[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		float rooftop_shininess = 100.0f;
+		int rooftop_texcount = 0;
+
+		rooftop = createCone(0.5f, 0.75f, 4);
+		memcpy(rooftop.mat.ambient, rooftop_amb, 4 * sizeof(float));
+		memcpy(rooftop.mat.diffuse, rooftop_diff, 4 * sizeof(float));
+		memcpy(rooftop.mat.specular, rooftop_spec, 4 * sizeof(float));
+		memcpy(rooftop.mat.emissive, rooftop_emissive, 4 * sizeof(float));
+		rooftop.mat.shininess = rooftop_shininess;
+		rooftop.mat.texCount = rooftop_texcount;
+	}
 
 public:
 	House( float x, float z) {
 
 		this->x = x; this->z = z;
-		float amb[4] = { 0.2f, 0.15f, 0.1f, 1.0f };
-		float diff[4] = { 0.8f, 0.6f, 0.4f, 1.0f };
-		float spec[4] = { 0.8f, 0.8f, 0.8f, 1.0f };
-		float emissive[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		float shininess = 100.0f;
-		int texcount = 0;
 
 		aabb_max[0] = this->x + 1; aabb_max[1] = 1.0f; aabb_max[2] = this->z + 1.0;
 		aabb_min[0] = this->x; aabb_min[1] = 0.0f; aabb_min[2] = this->z;
 
-
-		house = createHouse();
-		rooftop = createRooftop();
-		memcpy(house.mat.ambient, amb, 4 * sizeof(float));
-		memcpy(house.mat.diffuse, diff, 4 * sizeof(float));
-		memcpy(house.mat.specular, spec, 4 * sizeof(float));
-		memcpy(house.mat.emissive, emissive, 4 * sizeof(float));
-		house.mat.shininess = shininess;
-		house.mat.texCount = texcount;
-
-		memcpy(rooftop.mat.ambient, amb, 4 * sizeof(float));
-		memcpy(rooftop.mat.diffuse, diff, 4 * sizeof(float));
-		memcpy(rooftop.mat.specular, spec, 4 * sizeof(float));
-		memcpy(rooftop.mat.emissive, emissive, 4 * sizeof(float));
-		rooftop.mat.shininess = shininess;
-		rooftop.mat.texCount = texcount;
+		createMesh();
 	}
 
 	void render(struct render_info rInfo) {

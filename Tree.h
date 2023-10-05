@@ -19,46 +19,53 @@ private:
 	MyMesh trunk;
 	MyMesh leafs;
 
+	void createMesh() {
+		float trunk_amb[4] = { 0.15f, 0.1f, 0.06f, 1.0f };
+		float trunk_diff[4] = { 0.2f, 0.15f, 0.09f, 1.0f };
+		float trunk_spec[4] = { 0.03f, 0.02f, 0.01f, 1.0f };
+		float trunk_emissive[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		float trunk_shininess = 100.0f;
+		int trunk_texcount = 0;
 
-	MyMesh createTrunk() { return createCylinder(this->height, this->radius, 20); }
-	MyMesh createLeafs() { return createCone(this->height*1.2f, this->radius*2.5f, 20); }
+		trunk = createCylinder(this->height, this->radius, 20);
+		memcpy(trunk.mat.ambient, trunk_amb, 4 * sizeof(float));
+		memcpy(trunk.mat.diffuse, trunk_diff, 4 * sizeof(float));
+		memcpy(trunk.mat.specular, trunk_spec, 4 * sizeof(float));
+		memcpy(trunk.mat.emissive, trunk_emissive, 4 * sizeof(float));
+		trunk.mat.shininess = trunk_shininess;
+		trunk.mat.texCount = trunk_texcount;
+
+		float leafs_amb[4] = { 0.15f, 0.25f, 0.15f, 1.0f };
+		float leafs_diff[4] = { 0.15f, 0.3f, 0.15f, 1.0f };
+		float leafs_spec[4] = { 0.02f, 0.05f, 0.01f, 1.0f };
+		float leafs_emissive[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		float leafs_shininess = 100.0f;
+		int leafs_texcount = 0;
+
+		leafs = createCone(this->height * 2.0f, this->radius * 2.5f, 20);
+		memcpy(leafs.mat.ambient, leafs_amb, 4 * sizeof(float));
+		memcpy(leafs.mat.diffuse, leafs_diff, 4 * sizeof(float));
+		memcpy(leafs.mat.specular, leafs_spec, 4 * sizeof(float));
+		memcpy(leafs.mat.emissive, leafs_emissive, 4 * sizeof(float));
+		leafs.mat.shininess = leafs_shininess;
+		leafs.mat.texCount = leafs_texcount;
+	}
 
 
 public:
 	Tree(float radius, float height, float x, float z) {
 
 		this->x = x; this->z = z; this->radius = radius; this->height = height;
-		float amb[4] = { 0.2f, 0.15f, 0.1f, 1.0f };
-		float diff[4] = { 0.8f, 0.6f, 0.4f, 1.0f };
-		float spec[4] = { 0.8f, 0.8f, 0.8f, 1.0f };
-		float emissive[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		float shininess = 100.0f;
-		int texcount = 0;
 
 		aabb_max[0] = this->x + this->radius * 2.5f; 
-		aabb_max[1] = this->height + this->height * 1.2f;
+		aabb_max[1] = this->height + this->height * 2.0f;
 		aabb_max[2] = this->z + this->radius * 2.5f;
 
 		aabb_max[0] = this->x - this->radius * 2.5f;
 		aabb_max[1] = 0.0f;
 		aabb_max[2] = this->z - this->radius * 2.5f;
 
-
-		trunk = createTrunk();
-		leafs = createLeafs();
-		memcpy(trunk.mat.ambient, amb, 4 * sizeof(float));
-		memcpy(trunk.mat.diffuse, diff, 4 * sizeof(float));
-		memcpy(trunk.mat.specular, spec, 4 * sizeof(float));
-		memcpy(trunk.mat.emissive, emissive, 4 * sizeof(float));
-		trunk.mat.shininess = shininess;
-		trunk.mat.texCount = texcount;
-
-		memcpy(leafs.mat.ambient, amb, 4 * sizeof(float));
-		memcpy(leafs.mat.diffuse, diff, 4 * sizeof(float));
-		memcpy(leafs.mat.specular, spec, 4 * sizeof(float));
-		memcpy(leafs.mat.emissive, emissive, 4 * sizeof(float));
-		leafs.mat.shininess = shininess;
-		leafs.mat.texCount = texcount;
+		createMesh();
 	}
 
 	void render(struct render_info rInfo) {

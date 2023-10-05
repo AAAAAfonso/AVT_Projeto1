@@ -11,26 +11,28 @@ private:
 	float height;
 	MyMesh mesh;
 
-	MyMesh createMesh() { return createQuad(this->width, this->height); }
-
-public:
-	Terrain(float width, float height) {
-		this->width = width; this->height = height;
-
-		float amb[4] = { 0.2f, 0.15f, 0.1f, 1.0f };
-		float diff[4] = { 0.8f, 0.6f, 0.4f, 1.0f };
-		float spec[4] = { 0.8f, 0.8f, 0.8f, 1.0f };
+	void createMesh() {
+		float amb[4] = { 0.2f, 0.2f, 0.21f, 1.0f };
+		float diff[4] = { 0.4f, 0.4f, 0.42f, 1.0f };
+		float spec[4] = { 0.3f, 0.3f, 0.3f, 1.0f };
 		float emissive[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		float shininess = 100.0f;
+		float shininess = 30.0f;
 		int texcount = 0;
 
-		mesh = createMesh();
+		mesh = createQuad(this->width, this->height);
 		memcpy(mesh.mat.ambient, amb, 4 * sizeof(float));
 		memcpy(mesh.mat.diffuse, diff, 4 * sizeof(float));
 		memcpy(mesh.mat.specular, spec, 4 * sizeof(float));
 		memcpy(mesh.mat.emissive, emissive, 4 * sizeof(float));
 		mesh.mat.shininess = shininess;
 		mesh.mat.texCount = texcount;
+	}
+
+public:
+	Terrain(float width, float height) {
+		this->width = width; this->height = height;
+
+		createMesh();
 	}
 	
 	void render(struct render_info rInfo) {

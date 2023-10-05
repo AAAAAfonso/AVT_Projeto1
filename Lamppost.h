@@ -13,10 +13,10 @@ private:
 	MyMesh post;
 
 	void createMesh() {
-		float lamp_amb[4] = { 0.2f, 0.15f, 0.1f, 1.0f };
-		float lamp_diff[4] = { 0.8f, 0.6f, 0.4f, 1.0f };
-		float lamp_spec[4] = { 0.8f, 0.8f, 0.8f, 1.0f };
-		float lamp_emissive[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		float lamp_amb[4] = { 0.9f, 0.9f, 0.75f, 1.0f };
+		float lamp_diff[4] = { 0.8f, 0.8f, 0.7f, 1.0f };
+		float lamp_spec[4] = { 0.8f, 0.8f, 0.7f, 1.0f };
+		float lamp_emissive[4] = { 0.9f, 0.9f, 0.75f, 1.0f };
 		float lamp_shininess = 100.0f;
 		int lamp_texcount = 0;
 
@@ -28,9 +28,9 @@ private:
 		lamp.mat.shininess = lamp_shininess;
 		lamp.mat.texCount = lamp_texcount;
 
-		float post_amb[4] = { 0.2f, 0.15f, 0.1f, 1.0f };
-		float post_diff[4] = { 0.8f, 0.6f, 0.4f, 1.0f };
-		float post_spec[4] = { 0.8f, 0.8f, 0.8f, 1.0f };
+		float post_amb[4] = { 0.05f, 0.1f, 0.075f, 1.0f };
+		float post_diff[4] = { 0.05f, 0.05f, 0.05f, 1.0f };
+		float post_spec[4] = { 0.4f, 0.4f, 0.4f, 1.0f };
 		float post_emissive[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		float post_shininess = 100.0f;
 		int post_texcount = 0;
@@ -49,6 +49,12 @@ public:
 		this->x = x; this->z = z;
 
 		createMesh();
+	}
+
+	float *get_pointlight_pos() {
+		float *pos = new float[4];
+		pos[0] = x, pos[1] = 1.0f, pos[2] = z, pos[3] = 1.0f;
+		return pos;
 	}
 
 	void render(struct render_info rInfo) {

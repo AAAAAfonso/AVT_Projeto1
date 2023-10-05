@@ -34,6 +34,8 @@
 
 #include "avtFreeType.h"
 
+#include <random>
+
 #include "update_info.h"
 #include "render_info.h"
 #include "Terrain.h"
@@ -76,12 +78,14 @@ extern float mNormal3x3[9];
 GLint pvm_uniformId;
 GLint vm_uniformId;
 GLint normal_uniformId;
-GLint lPos_uniformId;
 GLint tex_loc, tex_loc1, tex_loc2;
 
 GLint dirLPos_uniformId;
 GLint dirLToggled_uniformId;
-	
+
+vector<GLint> pointLPos_uniformIds;
+GLint pointLToggled_uniformId;
+
 // Camera Position
 float camX, camY, camZ;
 
@@ -98,6 +102,7 @@ char s[32];
 float dirLightPos[4] = {1.0f, -0.5f, 0.0f, 0.0f};
 
 bool dirLightToggled = true;
+bool pointLightToggled = true;
 
 
 struct update_info uInfo = { 0.0f, 0.0f, 0.0f };
@@ -105,7 +110,7 @@ struct update_info uInfo = { 0.0f, 0.0f, 0.0f };
 // Create objects
 Terrain* terrain;
 Sleigh* sleigh;
-Lamppost* lamppost;
+vector<Lamppost> lampposts;
 vector<SnowBall> snowballs;
 vector<House> houses;
 vector<Tree> trees;
@@ -189,14 +194,22 @@ void renderScene(void) {
 		glUniform4fv(dirLPos_uniformId, 1, res);
 		glUniform1i(dirLToggled_uniformId, dirLightToggled);
 
+		for (int i = 0; i < 6; i++) {
+			float *pos = lampposts[i].get_pointlight_pos();
+			multMatrixPoint(VIEW, pos, res);
+			delete[] pos;
+			glUniform4fv(pointLPos_uniformIds[i], 1, res);
+		}
+		glUniform1i(pointLToggled_uniformId, pointLightToggled);
+
 	struct render_info rInfo = {shader, vm_uniformId, pvm_uniformId, normal_uniformId};
 
 	terrain->render(rInfo);
 	sleigh->render(rInfo);
+	for (int i = 0; i < 6; i++) lampposts[i].render(rInfo);
 	for (int i = 0; i < snowballs.size(); i++) snowballs[i].render(rInfo);
 	for (int i = 0; i < houses.size(); i++) houses[i].render(rInfo);
 	for (int i = 0; i < trees.size(); i++) trees[i].render(rInfo);
-	lamppost->render(rInfo);
 
 	//Render text (bitmap fonts) in screen coordinates. So use ortoghonal projection with viewport coordinates.
 	glDisable(GL_DEPTH_TEST);
@@ -250,14 +263,17 @@ void processKeys(unsigned char key, int xx, int yy)
 		case 'n':
 			dirLightToggled = !dirLightToggled;
 			break;
+		case 'c':
+			pointLightToggled = !pointLightToggled;
+			break;
 
 		case 27:
 			glutLeaveMainLoop();
 			break;
 
-		case 'c': 
-			printf("Camera Spherical Coordinates (%f, %f, %f)\n", alpha, beta, r);
-			break;
+		//case 'c': 
+		//	printf("Camera Spherical Coordinates (%f, %f, %f)\n", alpha, beta, r);
+		//	break;
 		//case 'm': glEnable(GL_MULTISAMPLE); break;
 		//case 'n': glDisable(GL_MULTISAMPLE); break;
 	}
@@ -390,6 +406,14 @@ GLuint setupShaders() {
 
 	dirLPos_uniformId = glGetUniformLocation(shader.getProgramIndex(), "d_l_pos");
 	dirLToggled_uniformId = glGetUniformLocation(shader.getProgramIndex(), "dir_l_toggled");
+
+	pointLPos_uniformIds.push_back(glGetUniformLocation(shader.getProgramIndex(), "p_l_pos0"));
+	pointLPos_uniformIds.push_back(glGetUniformLocation(shader.getProgramIndex(), "p_l_pos1"));
+	pointLPos_uniformIds.push_back(glGetUniformLocation(shader.getProgramIndex(), "p_l_pos2"));
+	pointLPos_uniformIds.push_back(glGetUniformLocation(shader.getProgramIndex(), "p_l_pos3"));
+	pointLPos_uniformIds.push_back(glGetUniformLocation(shader.getProgramIndex(), "p_l_pos4"));
+	pointLPos_uniformIds.push_back(glGetUniformLocation(shader.getProgramIndex(), "p_l_pos5"));
+	pointLToggled_uniformId = glGetUniformLocation(shader.getProgramIndex(), "point_l_toggled");
 	
 	printf("InfoLog for Per Fragment Phong Lightning Shader\n%s\n\n", shader.getAllInfoLogs().c_str());
 
@@ -435,7 +459,19 @@ void init()
 	terrain = new Terrain(25.0f, 25.0f);
 	sleigh = new Sleigh(-0.5f, 0.0f, -0.5f, 0.0f);
 	for (int i = 0; i < 360; i += 360/4) {
-		snowballs.push_back(SnowBall(1.0f, i, 7.0f ));
+		snowballs.push_back(SnowBall(0.5f, i, 7.0f ));
+	}
+	for (int i = 0; i < 6; i++) {
+		lampposts.push_back(Lamppost(5.0f * ((i % 3) - 1), 2.5f * ((i / 3) * 2 - 1)));
+	}
+	for (int i = 0; i < 8; i++) {
+		houses.push_back(House(5.0f * ((i % 4) - 1) - 2.5f, 4.0f * ((i / 4) * 2 - 1)));
+	}
+	for (int i = 0; i < 20; i++) {
+		float size = rand() % 15 * 0.01f + 0.05f;
+		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 24 - 11.5f + (rand() % 10) * 0.1f - 0.5, rand() % 6 - 11.5f + (rand() % 10) * 0.1f - 0.5));
+		size = rand() % 15 * 0.01f + 0.05f;
+		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 24 - 11.5f + (rand() % 10) * 0.1f - 0.5, rand() % 6 + 6.5f + (rand() % 10) * 0.1f - 0.5));
 	}
 	lamppost = new Lamppost(4.0f, 4.0f);
 
@@ -451,9 +487,6 @@ void init()
 
 	uInfo.houses = &houses;
 	uInfo.trees = &trees;
-
-
-
 
 
 	// some GL settings

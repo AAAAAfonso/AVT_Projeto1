@@ -9,12 +9,16 @@
 extern float mCompMatrix[COUNT_COMPUTED_MATRICES][16];
 extern float mNormal3x3[9];
 
-class Tree {
+class Tree{
 private:
-
 	float x, z, radius, height;
-	float aabb_max[4];
-	float aabb_min[4];
+
+
+	bool colided = false;
+	const float timer = 1.5f;
+	const float speed = 2.0f;
+	float currentTime = 0.0f;
+	float dir[2];
 
 	MyMesh trunk;
 	MyMesh leafs;
@@ -25,6 +29,9 @@ private:
 
 
 public:
+	float aabb_max[4];
+	float aabb_min[4];
+
 	Tree(float radius, float height, float x, float z) {
 
 		this->x = x; this->z = z; this->radius = radius; this->height = height;
@@ -39,9 +46,9 @@ public:
 		aabb_max[1] = this->height + this->height * 1.2f;
 		aabb_max[2] = this->z + this->radius * 2.5f;
 
-		aabb_max[0] = this->x - this->radius * 2.5f;
-		aabb_max[1] = 0.0f;
-		aabb_max[2] = this->z - this->radius * 2.5f;
+		aabb_min[0] = this->x - this->radius * 2.5f;
+		aabb_min[1] = 0.0f;
+		aabb_min[2] = this->z - this->radius * 2.5f;
 
 
 		trunk = createTrunk();
@@ -117,9 +124,44 @@ public:
 		popMatrix(MODEL);
 	}
 
+	bool getColided() {
+		return this->colided;
+	}
 
+	void setColided(float *new_dir) {
+		this->dir[0] = new_dir[0];
+		this->dir[1] = new_dir[2];
+		float size = std::sqrt(new_dir[0] * new_dir[0] + new_dir[2] * new_dir[2]);
+		this->dir[0] /= size;
+		this->dir[1] /= size;
+		this->colided = true;
+		this->currentTime = 0.0f;
 
-	void updatetrunk(float deltatime) {
+	}
 
+	void updateTree(float deltatime) {
+		this->currentTime += deltatime;
+		if (this->currentTime < this->timer) {
+
+			this->x += this->dir[0]*this->speed * deltatime;
+			this->aabb_max[0] += this->dir[0] * this->speed * deltatime;
+			this->aabb_min[0] += this->dir[0] * this->speed * deltatime;
+
+			this->z += this->dir[1]*this->speed * deltatime;
+			this->aabb_max[2] += this->dir[1] * this->speed * deltatime;
+			this->aabb_min[2] += this->dir[1] * this->speed * deltatime;
+
+		}
+		else {
+			this->currentTime = 0.0f;
+			this->colided = false;
+		}
+
+		if (std::fabs(this->x) >= 13) {
+			this->x = 12.5 * (this->x < 0 ? -1 : 1);
+		}
+		if (std::fabs(this->z) >= 13) {
+			this->z = 11 * (this->z < 0 ? -1 : 1);
+		}
 	}
 };

@@ -7,12 +7,15 @@
 extern float mCompMatrix[COUNT_COMPUTED_MATRICES][16];
 extern float mNormal3x3[9];
 
-class House {
+class House{
 private:
-	
 	float x, z;
-	float aabb_max[4];
-	float aabb_min[4];
+	
+	bool colided = false;
+	const float timer = 1.5f;
+	const float speed = 5.0f;
+	float currentTime = 0.0f;
+	float dir[2];
 
 	MyMesh house;
 	MyMesh rooftop;
@@ -23,6 +26,9 @@ private:
 
 
 public:
+	float aabb_max[4];
+	float aabb_min[4];
+
 	House( float x, float z) {
 
 		this->x = x; this->z = z;
@@ -111,8 +117,41 @@ public:
 	}
 
 
+	bool getColided() {
+		return this->colided;
+	}
+
+	void setColided(float* new_dir) {
+		this->dir[0] = new_dir[0];
+		this->dir[1] = new_dir[2];
+		float size = std::sqrt(new_dir[0] * new_dir[0] + new_dir[2] * new_dir[2]);
+		this->dir[0] /= size;
+		this->dir[1] /= size;
+		this->colided = true;
+		this->currentTime = 0.0f;
+	}
 
 	void updateHouse(float deltatime) {
-		
+		this->currentTime += deltatime;
+		if (this->currentTime < this->timer) {
+			this->x += this->dir[0] * this->speed * deltatime;
+			this->aabb_max[0] += this->dir[0] * this->speed * deltatime;
+			this->aabb_min[0] += this->dir[0] * this->speed * deltatime;
+
+			this->z += this->dir[1] * this->speed * deltatime;
+			this->aabb_max[2] += this->dir[1] * this->speed * deltatime;
+			this->aabb_min[2] += this->dir[1] * this->speed * deltatime;
+		}
+		else {
+			this->currentTime = 0.0f;
+			this->colided = false;
+		}
+
+		if (std::fabs(this->x) >= 13) {
+			this->x = 11 * (this->x < 0 ? -1 : 1);
+		}
+		if (std::fabs(this->z) >= 13) {
+			this->z = 11 * (this->z < 0 ? -1 : 1);
+		}
 	}
 };

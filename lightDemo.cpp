@@ -39,6 +39,8 @@
 #include "Terrain.h"
 #include "Sleigh.h"
 #include "Snowball.h"
+#include "House.h"
+#include "Tree.h"
 
 
 using namespace std;
@@ -98,6 +100,8 @@ struct update_info uInfo = { 0.0f, 0.0f, 0.0f };
 Terrain *terrain;
 Sleigh* sleigh;
 vector<SnowBall> snowballs;
+vector<House> houses;
+vector<Tree> trees;
 
 
 void timer(int value)
@@ -172,7 +176,9 @@ void renderScene(void) {
 
 	terrain->render(rInfo);
 	sleigh->render(rInfo);
-	for(int i = 0 ; i < 4; i++) snowballs[i].render(rInfo);
+	for (int i = 0; i < snowballs.size(); i++) snowballs[i].render(rInfo);
+	for (int i = 0; i < houses.size(); i++) houses[i].render(rInfo);
+	for (int i = 0; i < trees.size(); i++) trees[i].render(rInfo);
 
 	//Render text (bitmap fonts) in screen coordinates. So use ortoghonal projection with viewport coordinates.
 	glDisable(GL_DEPTH_TEST);
@@ -407,6 +413,19 @@ void init()
 	for (int i = 0; i < 360; i += 360/4) {
 		snowballs.push_back(SnowBall(1.0f, i, 7.0f ));
 	}
+
+	houses.push_back(House(2.0f, 4.0f));
+	houses.push_back(House(4.0f, 4.0f));
+	houses.push_back(House(-4.0f, 4.0f));
+	houses.push_back(House(-2.0f, 4.0f));
+
+	trees.push_back(Tree(0.1f, 0.4, 1.0f, 2.0f));
+	trees.push_back(Tree(0.1f, 0.4, 1.0f, -2.0f));
+	trees.push_back(Tree(0.1f, 0.4, -1.0f, 2.0f));
+	trees.push_back(Tree(0.1f, 0.4, -1.0f, -2.0f));
+
+
+
 
 	// some GL settings
 	glEnable(GL_DEPTH_TEST);

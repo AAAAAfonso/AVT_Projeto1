@@ -137,7 +137,16 @@ void refresh(int value)
 	for (int i = 0; i < 4; i++) {
 		snowballs[i].updateSnowBallPosition(1.0f / FPS);
 	}
-
+	for (int i = 0; i < houses.size(); i++) {
+		if (houses[i].getColided()) {
+			houses[i].updateHouse(1.0/FPS);
+		}
+	}
+	for (int i = 0; i < trees.size(); i++) {
+		if (trees[i].getColided()) {
+			trees[i].updateTree(1.0 / FPS);
+		}
+	}
 	glutPostRedisplay();
 	glutTimerFunc(1000 / FPS, refresh, 0);
 }
@@ -480,6 +489,10 @@ void init()
 		size = rand() % 15 * 0.01f + 0.05f;
 		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 24 - 11.5f + (rand() % 10) * 0.1f - 0.5, rand() % 6 + 6.5f + (rand() % 10) * 0.1f - 0.5));
 	}
+
+	uInfo.snowballs = &snowballs;
+	uInfo.houses = &houses;
+	uInfo.trees = &trees;
 
 	cams.push_back(Camera(0.0f, 20.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1, 0, 0, 0));
 	cams.push_back(Camera(0.0f, 20.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1, 0, 0, 1));

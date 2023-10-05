@@ -34,6 +34,8 @@
 
 #include "avtFreeType.h"
 
+#include <random>
+
 #include "update_info.h"
 #include "render_info.h"
 #include "Terrain.h"
@@ -453,19 +455,16 @@ void init()
 	for (int i = 0; i < 6; i++) {
 		lampposts.push_back(Lamppost(5.0f * ((i % 3) - 1), 2.5f * ((i / 3) * 2 - 1)));
 	}
-
-	houses.push_back(House(2.0f, 4.0f));
-	houses.push_back(House(4.0f, 4.0f));
-	houses.push_back(House(-4.0f, 4.0f));
-	houses.push_back(House(-2.0f, 4.0f));
-
-	trees.push_back(Tree(0.1f, 0.4, 1.0f, 2.0f));
-	trees.push_back(Tree(0.1f, 0.4, 1.0f, -2.0f));
-	trees.push_back(Tree(0.1f, 0.4, -1.0f, 2.0f));
-	trees.push_back(Tree(0.1f, 0.4, -1.0f, -2.0f));
-
-
-
+	for (int i = 0; i < 8; i++) {
+		houses.push_back(House(5.0f * ((i % 4) - 1) - 2.5f, 4.0f * ((i / 4) * 2 - 1)));
+	}
+	for (int i = 0; i < 20; i++) {
+		float size = rand() % 15 * 0.01f + 0.05f;
+		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 24 - 11.5f + (rand() % 10) * 0.1f - 0.5, rand() % 6 - 11.5f + (rand() % 10) * 0.1f - 0.5));
+		size = rand() % 15 * 0.01f + 0.05f;
+		printf("%f\n", size);
+		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 24 - 11.5f + (rand() % 10) * 0.1f - 0.5, rand() % 6 + 6.5f + (rand() % 10) * 0.1f - 0.5));
+	}
 
 	// some GL settings
 	glEnable(GL_DEPTH_TEST);

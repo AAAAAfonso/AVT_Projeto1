@@ -42,7 +42,7 @@ private:
 		float leafs_shininess = 100.0f;
 		int leafs_texcount = 0;
 
-		leafs = createCone(this->height * 2.0f, this->radius * 2.5f, 20);
+		leafs = createCone(this->height * 3.0f, this->radius * 3.0f, 20);
 		memcpy(leafs.mat.ambient, leafs_amb, 4 * sizeof(float));
 		memcpy(leafs.mat.diffuse, leafs_diff, 4 * sizeof(float));
 		memcpy(leafs.mat.specular, leafs_spec, 4 * sizeof(float));
@@ -58,12 +58,12 @@ public:
 		this->x = x; this->z = z; this->radius = radius; this->height = height;
 
 		aabb_max[0] = this->x + this->radius * 2.5f; 
-		aabb_max[1] = this->height + this->height * 2.0f;
-		aabb_max[2] = this->z + this->radius * 2.5f;
+		aabb_max[1] = this->height + this->height * 3.0f;
+		aabb_max[2] = this->z + this->radius * 3.0f;
 
-		aabb_max[0] = this->x - this->radius * 2.5f;
+		aabb_max[0] = this->x - this->radius * 3.0f;
 		aabb_max[1] = 0.0f;
-		aabb_max[2] = this->z - this->radius * 2.5f;
+		aabb_max[2] = this->z - this->radius * 3.0f;
 
 		createMesh();
 	}

@@ -40,7 +40,7 @@ private:
 		float rooftop_shininess = 100.0f;
 		int rooftop_texcount = 0;
 
-		rooftop = createCone(0.5f, 0.75f, 4);
+		rooftop = createCone(1.0f, 1.42f, 4);
 		memcpy(rooftop.mat.ambient, rooftop_amb, 4 * sizeof(float));
 		memcpy(rooftop.mat.diffuse, rooftop_diff, 4 * sizeof(float));
 		memcpy(rooftop.mat.specular, rooftop_spec, 4 * sizeof(float));
@@ -54,8 +54,8 @@ public:
 
 		this->x = x; this->z = z;
 
-		aabb_max[0] = this->x + 1; aabb_max[1] = 1.0f; aabb_max[2] = this->z + 1.0;
-		aabb_min[0] = this->x; aabb_min[1] = 0.0f; aabb_min[2] = this->z;
+		aabb_max[0] = this->x + 1.0f; aabb_max[1] = 2.5f; aabb_max[2] = this->z + 1.0f;
+		aabb_min[0] = this->x - 1.0f; aabb_min[1] = 0.0f; aabb_min[2] = this->z - 1.0f;
 
 		createMesh();
 	}
@@ -71,7 +71,8 @@ public:
 			glUniform1f(loc, house.mat.shininess);
 
 			pushMatrix(MODEL);
-			translate(MODEL, this->x, 0.0f, this->z);
+			translate(MODEL, this->x - 1.0f, 0.0f, this->z - 1.0f);
+			scale(MODEL, 2.0f, 1.5f, 2.0f);
 
 			// send matrices to OGL
 			computeDerivedMatrix(PROJ_VIEW_MODEL);
@@ -98,7 +99,7 @@ public:
 			glUniform1f(loc, rooftop.mat.shininess);
 
 			pushMatrix(MODEL);
-			translate(MODEL,  this->x + 0.5f, 1.0f, this->z + 0.5f);
+			translate(MODEL,  this->x, 1.5f, this->z);
 			rotate(MODEL, -45, 0.0f, 1.0f, 0.0f);
 			// send matrices to OGL
 			computeDerivedMatrix(PROJ_VIEW_MODEL);

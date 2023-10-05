@@ -5,6 +5,10 @@ out vec4 colorOut;
 uniform bool dir_l_toggled;
 uniform bool point_l_toggled;
 
+uniform sampler2D texmap;
+uniform sampler2D texmap1;
+uniform bool textured;
+
 struct Materials {
 	vec4 diffuse;
 	vec4 ambient;
@@ -21,6 +25,7 @@ in Data {
 	vec3 eye;
 	vec3 dirLightDir;
 	vec3 pointLightDir[6];
+	vec2 tex_coord;
 } DataIn;
 
 void main() {
@@ -58,5 +63,12 @@ void main() {
 		colorOut += intensity * mat.diffuse + spec;
 	}
 	
-	colorOut = min(colorOut + mat.ambient, 1.0f);
+	if (textured) {
+		vec4 texel, texel1;
+		texel = texture(texmap, DataIn.tex_coord);
+		texel1 = texture(texmap1, DataIn.tex_coord);
+		colorOut = min(texel*texel1, 1.0f);
+	} else {
+		colorOut = min(colorOut + mat.ambient, 1.0f);
+	}
 }

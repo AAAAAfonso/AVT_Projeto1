@@ -26,6 +26,10 @@ public:
 		pos[0] = x; pos[1] = y; pos[2] = z; pos[3] = 0;
 		this->hAngle = hAngle;
 
+		dir[0] = cos(vAngle * 3.14f / 180) * sin(hAngle * 3.14f / 180);
+		dir[1] = -sin(vAngle * 3.14f / 180);
+		dir[2] = cos(vAngle * 3.14f / 180) * cos(hAngle * 3.14f / 180);
+
 		float amb[4] = { 0.2f, 0.15f, 0.1f, 1.0f };
 		float diff[4] = { 0.8f, 0.6f, 0.4f, 1.0f };
 		float spec[4] = { 0.8f, 0.8f, 0.8f, 1.0f };
@@ -115,7 +119,12 @@ public:
 			}
 		}
 	}
-	void update(float deltaTime, struct update_info* uInfo) {
+
+	float *get_pos() {
+		return pos;
+	}
+
+	void update(float deltaTime, struct update_info *uInfo) {
 		static float hAngle_prev = 0.0f; static float vAngle_prev = 0.0f;
 		hAngle += uInfo->h_turning * 180.0f * deltaTime;
 		uInfo->h_turning = 0.0f;
@@ -165,6 +174,8 @@ public:
 		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
 		glUniform1f(loc, mesh.mat.shininess);
 
+		glUniform1i(rInfo.textured_uniformId, false);
+
 		pushMatrix(MODEL);
 		translate(MODEL, pos[0], pos[1], pos[2]);
 		rotate(MODEL, hAngle, 0.0f, 1.0f, 0.0f);
@@ -186,6 +197,4 @@ public:
 
 		popMatrix(MODEL);
 	}
-
-
 };

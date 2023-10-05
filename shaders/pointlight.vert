@@ -15,12 +15,14 @@ uniform vec4 p_l_pos5;
 
 in vec4 position;
 in vec4 normal;    //por causa do gerador de geometria
+in vec4 texCoord;
 
 out Data {
 	vec3 normal;
 	vec3 eye;
 	vec3 dirLightDir;
 	vec3 pointLightDir[6];
+	vec2 tex_coord;
 } DataOut;
 
 void main () {
@@ -38,6 +40,8 @@ void main () {
 	DataOut.pointLightDir[3] = vec3(p_l_pos3 - pos);
 	DataOut.pointLightDir[4] = vec3(p_l_pos4 - pos);
 	DataOut.pointLightDir[5] = vec3(p_l_pos5 - pos);
+
+	DataOut.tex_coord = texCoord.st;
 
 	gl_Position = m_pvm * position;	
 }

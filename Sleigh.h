@@ -170,6 +170,8 @@ public:
 		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
 		glUniform1f(loc, mesh.mat.shininess);
 
+		glUniform1i(rInfo.textured_uniformId, false);
+
 		pushMatrix(MODEL);
 		translate(MODEL, pos[0], pos[1], pos[2]);
 		rotate(MODEL, hAngle, 0.0f, 1.0f, 0.0f);

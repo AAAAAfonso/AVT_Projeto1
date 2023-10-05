@@ -34,6 +34,8 @@
 
 #include "avtFreeType.h"
 
+#include "Texture_Loader.h"
+
 #include <random>
 
 #include "Camera.h"
@@ -84,6 +86,9 @@ GLint tex_loc, tex_loc1, tex_loc2;
 
 GLint dirLPos_uniformId;
 GLint dirLToggled_uniformId;
+
+GLint textured_uniformId;
+GLuint TextureArray[2];
 
 vector<GLint> pointLPos_uniformIds;
 GLint pointLToggled_uniformId;
@@ -214,7 +219,14 @@ void renderScene(void) {
 		}
 		glUniform1i(pointLToggled_uniformId, pointLightToggled);
 
-	struct render_info rInfo = {shader, vm_uniformId, pvm_uniformId, normal_uniformId};
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
+		glUniform1i(tex_loc, 0);
+		glUniform1i(tex_loc1, 1);
+
+	struct render_info rInfo = {shader, vm_uniformId, pvm_uniformId, normal_uniformId, textured_uniformId};
 
 	terrain->render(rInfo);
 	sleigh->render(rInfo);
@@ -413,17 +425,17 @@ GLuint setupShaders() {
 	glLinkProgram(shader.getProgramIndex());
 	printf("InfoLog for Model Rendering Shader\n%s\n\n", shaderText.getAllInfoLogs().c_str());
 
-	if (!shader.isProgramValid()) {
-		printf("GLSL Model Program Not Valid!\n");
-		exit(1);
-	}
+	//if (!shader.isProgramValid()) {
+	//	printf("GLSL Model Program Not Valid!\n");
+	//	exit(1);
+	//}
 
 	pvm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_pvm");
 	vm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_viewModel");
 	normal_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_normal");
 	tex_loc = glGetUniformLocation(shader.getProgramIndex(), "texmap");
 	tex_loc1 = glGetUniformLocation(shader.getProgramIndex(), "texmap1");
-	tex_loc2 = glGetUniformLocation(shader.getProgramIndex(), "texmap2");
+	textured_uniformId = glGetUniformLocation(shader.getProgramIndex(), "textured");
 
 	dirLPos_uniformId = glGetUniformLocation(shader.getProgramIndex(), "d_l_pos");
 	dirLToggled_uniformId = glGetUniformLocation(shader.getProgramIndex(), "dir_l_toggled");
@@ -446,10 +458,10 @@ GLuint setupShaders() {
 	glLinkProgram(shaderText.getProgramIndex());
 	printf("InfoLog for Text Rendering Shader\n%s\n\n", shaderText.getAllInfoLogs().c_str());
 
-	if (!shaderText.isProgramValid()) {
-		printf("GLSL Text Program Not Valid!\n");
-		exit(1);
-	}
+	//if (!shaderText.isProgramValid()) {
+	//	printf("GLSL Text Program Not Valid!\n");
+	//	exit(1);
+	//}
 	
 	return(shader.isProgramLinked() && shaderText.isProgramLinked());
 }
@@ -468,6 +480,12 @@ void init()
 		exit(0);
 	}
 	ilInit();
+
+	//Texture Object definition
+
+	glGenTextures(2, TextureArray);
+	Texture2D_Loader(TextureArray, "texmap.jpg", 0);
+	Texture2D_Loader(TextureArray, "texmap1.jpg", 1);
 
 	/// Initialization of freetype library with font_name file
 	freeType_init(font_name);

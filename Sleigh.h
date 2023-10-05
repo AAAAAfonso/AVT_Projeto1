@@ -78,16 +78,20 @@ public:
 		return col_detected;
 	}
 	void updateAABB() {
-		this->aabb_max[0] = this->pos[0] + 0.5f * std::fabs(cos(this->hAngle * 3.14f / 180)) + 0.5f * std::fabs(sin(this->hAngle * 3.14f / 180));
+		this->aabb_max[0] = this->pos[0] + (0.5f * std::fabs(cos(this->hAngle * 3.14f / 180)) + 0.5f * std::fabs(sin(this->hAngle * 3.14f / 180))) * cos(this->vAngle * 3.14f / 180)
+										 + std::fmax(1 * sin(this->vAngle * 3.14 / 180) * sin(this->hAngle * 3.14 / 180), 0);;
+		
 		this->aabb_max[1] = this->pos[1] + 1 * std::fabs(cos(this->vAngle * 3.14f / 180)) + 0.5f * std::fabs(sin(this->vAngle * 3.14f / 180));
-		this->aabb_max[2] = this->pos[2] + 0.5f * (std::fabs(sin(this->hAngle * 3.14f / 180)) + 
-							std::fabs(cos(this->hAngle * 3.14f / 180))) * cos(this->vAngle * 3.14f / 180) +
-							(this->vAngle > 0? sin(this->vAngle * 3.14 /180): 0);
+		this->aabb_max[2] = this->pos[2] + 0.5f * (std::fabs(sin(this->hAngle * 3.14f / 180)) + std::fabs(cos(this->hAngle * 3.14f / 180))) * cos(this->vAngle * 3.14f / 180) +
+							std::fmax(1*sin(this->vAngle * 3.14 /180)*cos(this->hAngle*3.14 / 180), 0);
 
-		this->aabb_min[0] = this->pos[0] - 0.5f * std::fabs(cos(this->hAngle * 3.14f / 180)) - 0.5f * std::fabs(sin(this->hAngle * 3.14f / 180));
+		this->aabb_min[0] = this->pos[0] - 0.5f * std::fabs(cos(this->hAngle * 3.14f / 180)) - 0.5f * std::fabs(sin(this->hAngle * 3.14f / 180))
+										+ std::fmin(1 * sin(this->vAngle * 3.14 / 180) * sin(this->hAngle * 3.14 / 180), 0);
+		;
 		this->aabb_min[1] = this->pos[1] - 0.5f * std::fabs(sin(this->vAngle));
 		this->aabb_min[2] = this->pos[2] - 0.5f * (std::fabs(sin(this->hAngle * 3.14f / 180)) + std::fabs(cos(this->hAngle * 3.14f / 180))) * cos(this->vAngle * 3.14f / 180)
-							- (this->vAngle < 0 ? sin(this->vAngle * 3.14 / 180) : 0);
+							+ std::fmin(1 * sin(this->vAngle * 3.14 / 180) * cos(this->hAngle * 3.14 / 180), 0);
+		;
 
 	}
 

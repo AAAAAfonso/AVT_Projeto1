@@ -68,9 +68,9 @@ public:
 		aabb_max[1] = this->height + this->height * 3.0f;
 		aabb_max[2] = this->z + this->radius * 3.0f;
 
-		aabb_max[0] = this->x - this->radius * 3.0f;
-		aabb_max[1] = 0.0f;
-		aabb_max[2] = this->z - this->radius * 3.0f;
+		aabb_min[0] = this->x - this->radius * 3.0f;
+		aabb_min[1] = 0.0f;
+		aabb_min[2] = this->z - this->radius * 3.0f;
 
 		createMesh();
 	}

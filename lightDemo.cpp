@@ -473,17 +473,7 @@ void init()
 		size = rand() % 15 * 0.01f + 0.05f;
 		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 24 - 11.5f + (rand() % 10) * 0.1f - 0.5, rand() % 6 + 6.5f + (rand() % 10) * 0.1f - 0.5));
 	}
-	lamppost = new Lamppost(4.0f, 4.0f);
 
-	houses.push_back(House(2.0f, 4.0f));
-	houses.push_back(House(4.0f, 4.0f));
-	houses.push_back(House(-4.0f, 4.0f));
-	houses.push_back(House(-2.0f, 4.0f));
-
-	trees.push_back(Tree(0.1f, 0.4, 1.0f, 2.0f));
-	trees.push_back(Tree(0.1f, 0.4, 1.0f, -2.0f));
-	trees.push_back(Tree(0.1f, 0.4, -1.0f, 2.0f));
-	trees.push_back(Tree(0.1f, 0.4, -1.0f, -2.0f));
 
 	uInfo.houses = &houses;
 	uInfo.trees = &trees;

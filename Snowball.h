@@ -1,3 +1,5 @@
+#pragma once
+
 #include <geometry.h>
 #include <render_info.h>
 #include <AVTmathLib.h>
@@ -57,6 +59,7 @@ private:
 	}
 
 public:
+
 	SnowBall(float radius, float spawn_angle, float spawn_radius) {
 		this->radius = radius; this->alive = true;
 		this->spawn_angle = spawn_angle; this->spawn_radius = spawn_radius;
@@ -139,5 +142,17 @@ public:
 				time_passed = 0;
 			}
 		}
+	}
+
+	void KillBall() {
+		this->alive = false;
+	}
+
+	float* getPosition() {
+		return pos;
+	}
+
+	float getRadius() {
+		return this->radius;
 	}
 };

@@ -90,6 +90,27 @@ public:
 							- (this->vAngle < 0 ? sin(this->vAngle * 3.14 / 180) : 0);
 
 	}
+
+	void detectColisionSphere(struct update_info* uInfo) {
+		for (int i = 0; i < uInfo->snowballs->size(); i++) {
+			float pos[3];
+			pos[0] = (*(uInfo->snowballs))[i].getPosition()[0];
+			pos[1] = (*(uInfo->snowballs))[i].getPosition()[1];
+			pos[2] = (*(uInfo->snowballs))[i].getPosition()[2];
+			int x = std::max(this->aabb_min[0], std::min(pos[0], this->aabb_max[0]));
+			int y = std::max(this->aabb_min[1], std::min(pos[1], this->aabb_max[1]));
+			int z = std::max(this->aabb_min[2], std::min(pos[2], this->aabb_max[2]));
+
+			int distance = std::sqrt(
+				(x - pos[0]) * (x - pos[0]) +
+				(y - pos[1]) * (y - pos[1]) +
+				(z - pos[2]) * (z - pos[2]));
+
+			if (distance < (*(uInfo->snowballs))[i].getRadius() ) {
+				(*(uInfo->snowballs))[i].KillBall();
+			}
+		}
+	}
 	void update(float deltaTime, struct update_info* uInfo) {
 		static float hAngle_prev = 0.0f; static float vAngle_prev = 0.0f;
 		hAngle += uInfo->h_turning * 180.0f * deltaTime;
@@ -108,7 +129,7 @@ public:
 
 
 		updateAABB();
-
+		detectColisionSphere(uInfo);
 		if (!detectColisionAABBbox(uInfo)) {
 			dir[0] = cos(vAngle * 3.14f / 180) * sin(hAngle * 3.14f / 180);
 			dir[1] = -sin(vAngle * 3.14f / 180);

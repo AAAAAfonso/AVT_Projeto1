@@ -109,7 +109,7 @@ public:
 	}
 
 	void updateSnowBallSpeed() {
-		this->speed += (rand() % 200) / 100;
+		this->speed += this->speed < 12? (rand() % 200) / 100 : 12;
 	}
 
 	void respawnBall(){

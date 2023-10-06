@@ -148,6 +148,12 @@ void timer(int value)
     glutTimerFunc(1000, timer, 0);
 }
 
+void updateGameSpeed(int value) {
+	for (int i = 0; i < snowballs.size(); i++) {
+		snowballs[i].updateSnowBallSpeed();
+	}
+	glutTimerFunc(10000, updateGameSpeed, 0);
+}
 void refresh(int value)
 {
 	sleigh->update(1.0f / FPS, &uInfo);
@@ -168,6 +174,7 @@ void refresh(int value)
 	}
 	glutPostRedisplay();
 	glutTimerFunc(1000 / FPS, refresh, 0);
+
 }
 
 // ------------------------------------------------------------
@@ -623,6 +630,8 @@ int main(int argc, char **argv) {
 		return(1);
 
 	init();
+
+	glutTimerFunc(10000, updateGameSpeed, 0);
 
 	//  GLUT main loop
 	glutMainLoop();

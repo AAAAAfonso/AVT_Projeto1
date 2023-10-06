@@ -29,6 +29,10 @@ public:
 		return type;
 	}
 
+	void set_pos(int n, float val) {
+		pos[n] = val;
+	}
+
 	void update(float sleigh_pos[4], float sleigh_dir[4]) {
 		pos[0] = sleigh_pos[0] - sleigh_dir[0] * 5.0f;
 		pos[1] = sleigh_pos[1] - sleigh_dir[1] * 5.0f + 2.0f;

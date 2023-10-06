@@ -151,7 +151,8 @@ void timer(int value)
 void refresh(int value)
 {
 	sleigh->update(1.0f / FPS, &uInfo);
-	cams[2].update(sleigh->get_pos(), sleigh->get_direction());
+	if (!tracking)
+		cams[2].update(sleigh->get_pos(), sleigh->get_direction());
 	for (int i = 0; i < snowballs.size(); i++) {
 		snowballs[i].updateSnowBallPosition(1.0f / FPS);
 	}
@@ -416,10 +417,9 @@ void processMouseMotion(int xx, int yy)
 			rAux = 0.1f;
 	}
 
-	//camX = rAux * sin(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f);
-	//camZ = rAux * cos(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f);
-	//camY = rAux *   						       sin(betaAux * 3.14f / 180.0f);
-
+	cams[2].set_pos(0, rAux * sin(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f) + sleigh->get_pos()[0]);
+	cams[2].set_pos(2, rAux * cos(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f) + sleigh->get_pos()[2]);
+	cams[2].set_pos(1, rAux *   						       sin(betaAux * 3.14f / 180.0f) + sleigh->get_pos()[1]);
 //  uncomment this if not using an idle or refresh func
 //	glutPostRedisplay();
 }
@@ -431,9 +431,9 @@ void mouseWheel(int wheel, int direction, int x, int y) {
 	if (r < 0.1f)
 		r = 0.1f;
 
-	//camX = r * sin(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f);
-	//camZ = r * cos(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f);
-	//camY = r *   						     sin(beta * 3.14f / 180.0f);
+	cams[2].set_pos(0, r * sin(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f));
+	cams[2].set_pos(2, r * cos(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f));
+	cams[2].set_pos(1, r *   						     sin(beta * 3.14f / 180.0f));
 
 //  uncomment this if not using an idle or refresh func
 //	glutPostRedisplay();
@@ -461,10 +461,10 @@ GLuint setupShaders() {
 	glLinkProgram(shader.getProgramIndex());
 	printf("InfoLog for Model Rendering Shader\n%s\n\n", shaderText.getAllInfoLogs().c_str());
 
-	//if (!shader.isProgramValid()) {
-	//	printf("GLSL Model Program Not Valid!\n");
-	//	exit(1);
-	//}
+	if (!shader.isProgramValid()) {
+		printf("GLSL Model Program Not Valid!\n");
+		exit(1);
+	}
 
 	pvm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_pvm");
 	vm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_viewModel");
@@ -502,10 +502,10 @@ GLuint setupShaders() {
 	glLinkProgram(shaderText.getProgramIndex());
 	printf("InfoLog for Text Rendering Shader\n%s\n\n", shaderText.getAllInfoLogs().c_str());
 
-	//if (!shaderText.isProgramValid()) {
-	//	printf("GLSL Text Program Not Valid!\n");
-	//	exit(1);
-	//}
+	if (!shaderText.isProgramValid()) {
+		printf("GLSL Text Program Not Valid!\n");
+		exit(1);
+	}
 	
 	return(shader.isProgramLinked() && shaderText.isProgramLinked());
 }

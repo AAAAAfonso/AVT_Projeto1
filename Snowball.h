@@ -76,6 +76,7 @@ public:
 	}
 
 	void render(struct render_info rInfo) {
+		static float angle;
 		if (this->alive) {
 			GLint loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.ambient");
 			glUniform4fv(loc, 1, mesh.mat.ambient);
@@ -90,6 +91,9 @@ public:
 
 			pushMatrix(MODEL);
 			translate(MODEL, this->pos[0], this->pos[1], this->pos[2]);
+			rotate(MODEL, angle, dir[2], 0, -dir[0]);
+			translate(MODEL, 0, 0, 0);
+			angle += 0.2;
 
 			// send matrices to OGL
 			computeDerivedMatrix(PROJ_VIEW_MODEL);

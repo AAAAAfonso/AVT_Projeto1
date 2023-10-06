@@ -48,7 +48,7 @@ public:
 		dir[1] = -sin(vAngle * 3.14f / 180);
 		dir[2] = cos(vAngle * 3.14f / 180) * cos(hAngle * 3.14f / 180);
 
-		aabb_max[0] = 1.0f + x; aabb_max[1] = 1.0f + y;	aabb_max[2] = 1.0f + z;
+		aabb_max[0] = 0.6 + x; aabb_max[1] = 0.6f + y;	aabb_max[2] = 1.0f + z;
 		aabb_min[0] = x; aabb_max[1] = y;	aabb_max[2] = z;
 	}
 
@@ -84,17 +84,23 @@ public:
 		return col_detected;
 	}
 	void updateAABB() {
+
+		//float angle_0 = 0.5 * cos(0);
+		//float angle_x = 0.5 * cos(this->vAngle * 3.14f / 180);
+
+		//float small_dif = (angle_0 - angle_x) *cos(this->hAngle * 3.14f / 180);
+
 		this->aabb_max[0] = this->pos[0] + (0.3f * std::fabs(cos(this->hAngle * 3.14f / 180)) + 0.5f * std::fabs(sin(this->hAngle * 3.14f / 180))) * cos(this->vAngle * 3.14f / 180)
-										 + std::fmax(0.6 * sin(this->vAngle * 3.14 / 180) * sin(this->hAngle * 3.14 / 180), 0);;
+										 + std::fmax(0.6 * sin(this->vAngle * 3.14 / 180) * sin(this->hAngle * 3.14 / 180), 0);
 		
 		this->aabb_max[1] = this->pos[1] + 0.6 * std::fabs(cos(this->vAngle * 3.14f / 180)) + 0.5f * std::fabs(sin(this->vAngle * 3.14f / 180));
 		this->aabb_max[2] = this->pos[2] + (0.3f * std::fabs(sin(this->hAngle * 3.14f / 180)) + 0.5f*std::fabs(cos(this->hAngle * 3.14f / 180))) * cos(this->vAngle * 3.14f / 180) +
 							std::fmax(0.6*sin(this->vAngle * 3.14 /180)*cos(this->hAngle*3.14 / 180), 0);
 
-		this->aabb_min[0] = this->pos[0] - 0.3f * std::fabs(cos(this->hAngle * 3.14f / 180)) - 0.5f * std::fabs(sin(this->hAngle * 3.14f / 180))
+		this->aabb_min[0] = this->pos[0] - (0.3f * std::fabs(cos(this->hAngle * 3.14f / 180)) + 0.5f * std::fabs(sin(this->hAngle * 3.14f / 180))) * cos(this->vAngle * 3.14f / 180)
 										+ std::fmin(0.6 * sin(this->vAngle * 3.14 / 180) * sin(this->hAngle * 3.14 / 180), 0);
 		;
-		this->aabb_min[1] = this->pos[1] - 0.3f * std::fabs(sin(this->vAngle));
+		this->aabb_min[1] = this->pos[1] - 0.5f * std::fabs(sin(this->vAngle));
 		this->aabb_min[2] = this->pos[2] - (0.3*std::fabs(sin(this->hAngle * 3.14f / 180)) + 0.5*std::fabs(cos(this->hAngle * 3.14f / 180))) * cos(this->vAngle * 3.14f / 180)
 							+ std::fmin(0.6 * sin(this->vAngle * 3.14 / 180) * cos(this->hAngle * 3.14 / 180), 0);
 		;
@@ -107,11 +113,11 @@ public:
 			pos[0] = (*(uInfo->snowballs))[i].getPosition()[0];
 			pos[1] = (*(uInfo->snowballs))[i].getPosition()[1];
 			pos[2] = (*(uInfo->snowballs))[i].getPosition()[2];
-			int x = std::max(this->aabb_min[0], std::min(pos[0], this->aabb_max[0]));
-			int y = std::max(this->aabb_min[1], std::min(pos[1], this->aabb_max[1]));
-			int z = std::max(this->aabb_min[2], std::min(pos[2], this->aabb_max[2]));
+			float x = std::max(this->aabb_min[0], std::min(pos[0], this->aabb_max[0]));
+			float y = std::max(this->aabb_min[1], std::min(pos[1], this->aabb_max[1]));
+			float z = std::max(this->aabb_min[2], std::min(pos[2], this->aabb_max[2]));
 
-			int distance = std::sqrt(
+			float distance = std::sqrt(
 				(x - pos[0]) * (x - pos[0]) +
 				(y - pos[1]) * (y - pos[1]) +
 				(z - pos[2]) * (z - pos[2]));

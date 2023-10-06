@@ -149,7 +149,7 @@ void refresh(int value)
 {
 	sleigh->update(1.0f / FPS, &uInfo);
 	cams[2].update(sleigh->get_pos(), sleigh->get_direction());
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < snowballs.size(); i++) {
 		snowballs[i].updateSnowBallPosition(1.0f / FPS);
 	}
 	for (int i = 0; i < houses.size(); i++) {
@@ -526,7 +526,7 @@ void init()
 
 	terrain = new Terrain(25.0f, 25.0f);
 	sleigh = new Sleigh(0.0f, 0.0f, 0.0f, 90.0f);
-	for (int i = 0; i < 360; i += 360 / 4) {
+	for (int i = 0; i < 360; i += 360 / 12) {
 		snowballs.push_back(SnowBall(0.5f, i, 7.0f));
 	}
 	for (int i = 0; i < 6; i++) {

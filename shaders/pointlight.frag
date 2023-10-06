@@ -5,12 +5,14 @@ out vec4 colorOut;
 uniform bool dir_l_toggled;
 uniform bool point_l_toggled;
 uniform bool spot_l_toggled;
+//uniform bool fog_toggled;
 
 uniform float spot_l_threshold;
 
 uniform sampler2D texmap;
 uniform sampler2D texmap1;
 uniform bool textured;
+
 
 struct Materials {
 	vec4 diffuse;
@@ -22,6 +24,8 @@ struct Materials {
 };
 
 uniform Materials mat;
+
+in vec4 pos;
 
 in Data {
 	vec3 normal;
@@ -40,6 +44,10 @@ void main() {
 	vec3 n = normalize(DataIn.normal);
 	vec3 e = normalize(DataIn.eye);
 
+	vec3 fogColor = vec3(0.5,0.6,0.7);
+	float dist = length(pos); 
+
+	float fogAmount = exp( -dist*0.06 );
 	colorOut = vec4(0.0);
 
 	//calculations for the point light
@@ -93,4 +101,7 @@ void main() {
 	} else {
 		colorOut = min(colorOut + mat.ambient, 1.0f);
 	}
+
+	vec3 final_color = mix(fogColor, vec3(colorOut), fogAmount );
+	colorOut = vec4(final_color, 1);
 }

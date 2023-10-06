@@ -110,7 +110,7 @@ public:
 	void missionFail() {
 		this->pos[0] = 0;
 		this->pos[1] = 0;
-		this->pos[1] = 0;
+		this->pos[2] = 0;
 		this->speed = 0.0f;
 		dir[0] = cos(vAngle * 3.14f / 180) * sin(hAngle * 3.14f / 180);
 		dir[1] = -sin(vAngle * 3.14f / 180);

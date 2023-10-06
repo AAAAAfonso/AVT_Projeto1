@@ -57,7 +57,7 @@ using namespace std;
 int WindowHandle = 0;
 int WinX = 1024, WinY = 768;
 
-#define FPS 60
+#define FPS 40
 
 unsigned int FrameCount = 0;
 

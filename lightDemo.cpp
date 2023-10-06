@@ -96,6 +96,9 @@ GLint spotLSpot_uniformId;
 GLint spotLThreshold_uniformId;
 GLint spotLToggled_uniformId;
 
+bool fogToggled = true;
+GLint fogToggled_uniformId;
+
 GLint textured_uniformId;
 GLuint TextureArray[2];
 
@@ -243,6 +246,8 @@ void renderScene(void) {
 		glUniform1f(spotLThreshold_uniformId, cos(spotLightAngle));
 		glUniform1i(spotLToggled_uniformId, spotLightToggled);
 
+		glUniform1i(fogToggled_uniformId, fogToggled);
+
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
 		glActiveTexture(GL_TEXTURE1);
@@ -326,6 +331,9 @@ void processKeys(unsigned char key, int xx, int yy)
 			break;
 		case 'h':
 			spotLightToggled = !spotLightToggled;
+			break;
+		case 'f':
+			fogToggled = !fogToggled;
 			break;
 
 		case 27:
@@ -481,6 +489,8 @@ GLuint setupShaders() {
 	spotLSpot_uniformId =glGetUniformLocation(shader.getProgramIndex(), "s_l_spot");
 	spotLThreshold_uniformId = glGetUniformLocation(shader.getProgramIndex(), "spot_l_threshold");
 	spotLToggled_uniformId = glGetUniformLocation(shader.getProgramIndex(), "spot_l_toggled");
+
+	fogToggled_uniformId = glGetUniformLocation(shader.getProgramIndex(), "fog_toggled");
 	
 	printf("InfoLog for Per Fragment Phong Lightning Shader\n%s\n\n", shader.getAllInfoLogs().c_str());
 

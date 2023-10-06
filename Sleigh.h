@@ -92,6 +92,17 @@ public:
 				col_detected = true;
 			}
 		}
+		for (unsigned int i = 0; i < uInfo->lampposts->size(); i++) {
+			if ((*(uInfo->lampposts))[i].aabb_min[0] <= this->aabb_max[0] &&
+				(*(uInfo->lampposts))[i].aabb_max[0] >= this->aabb_min[0] &&
+				(*(uInfo->lampposts))[i].aabb_min[1] <= this->aabb_max[1] &&
+				(*(uInfo->lampposts))[i].aabb_max[1] >= this->aabb_min[1] &&
+				(*(uInfo->lampposts))[i].aabb_min[2] <= this->aabb_max[2] &&
+				(*(uInfo->lampposts))[i].aabb_max[2] >= this->aabb_min[2]) {
+				(*(uInfo->lampposts))[i].setColided(dir);
+				col_detected = true;
+			}
+		}
 		return col_detected;
 	}
 	void updateAABB() {

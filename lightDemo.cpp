@@ -172,6 +172,11 @@ void refresh(int value)
 			trees[i].updateTree(1.0 / FPS);
 		}
 	}
+	for (int i = 0; i < lampposts.size(); i++) {
+		if (lampposts[i].getColided()) {
+			lampposts[i].updateLamppost(1.0 / FPS);
+		}
+	}
 	if (statue->getColided()) {
 		statue->updateStatue(1.0 / FPS);
 	}
@@ -567,6 +572,7 @@ void init()
 	uInfo.snowballs = &snowballs;
 	uInfo.houses = &houses;
 	uInfo.trees = &trees;
+	uInfo.lampposts = &lampposts;
 	uInfo.statue = statue;
 
 	cams.push_back(Camera(0.0f, 20.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1, 0, 0, 0));

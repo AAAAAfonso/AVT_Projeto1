@@ -87,11 +87,16 @@ GLint tex_loc, tex_loc1, tex_loc2;
 GLint dirLPos_uniformId;
 GLint dirLToggled_uniformId;
 
-GLint textured_uniformId;
-GLuint TextureArray[2];
-
 vector<GLint> pointLPos_uniformIds;
 GLint pointLToggled_uniformId;
+
+vector<GLint> spotLPos_uniformIds;
+GLint spotLSpot_uniformId;
+GLint spotLThreshold_uniformId;
+GLint spotLToggled_uniformId;
+
+GLint textured_uniformId;
+GLuint TextureArray[2];
 
 // Mouse Tracking Variables
 int startX, startY, tracking = 0;
@@ -107,6 +112,9 @@ float dirLightPos[4] = {1.0f, -0.5f, 0.0f, 0.0f};
 
 bool dirLightToggled = true;
 bool pointLightToggled = true;
+bool spotLightToggled = true;
+
+float spotLightAngle = 20.0f;
 
 vector<Camera> cams;
 short active_camera = 0;
@@ -219,6 +227,17 @@ void renderScene(void) {
 		}
 		glUniform1i(pointLToggled_uniformId, pointLightToggled);
 
+		for (int i = 0; i < 2; i++) {
+			float* pos = sleigh->get_spotlight_pos(i);
+			multMatrixPoint(VIEW, pos, res);
+			delete[] pos;
+			glUniform4fv(spotLPos_uniformIds[i], 1, res);
+		}
+		multMatrixPoint(VIEW, sleigh->get_direction(), res);
+		glUniform4fv(spotLSpot_uniformId, 1, res);
+		glUniform1f(spotLThreshold_uniformId, cos(spotLightAngle));
+		glUniform1i(spotLToggled_uniformId, spotLightToggled);
+
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
 		glActiveTexture(GL_TEXTURE1);
@@ -298,6 +317,9 @@ void processKeys(unsigned char key, int xx, int yy)
 			break;
 		case 'c':
 			pointLightToggled = !pointLightToggled;
+			break;
+		case 'h':
+			spotLightToggled = !spotLightToggled;
 			break;
 
 		case 27:
@@ -447,6 +469,12 @@ GLuint setupShaders() {
 	pointLPos_uniformIds.push_back(glGetUniformLocation(shader.getProgramIndex(), "p_l_pos4"));
 	pointLPos_uniformIds.push_back(glGetUniformLocation(shader.getProgramIndex(), "p_l_pos5"));
 	pointLToggled_uniformId = glGetUniformLocation(shader.getProgramIndex(), "point_l_toggled");
+
+	spotLPos_uniformIds.push_back(glGetUniformLocation(shader.getProgramIndex(), "s_l_pos0"));
+	spotLPos_uniformIds.push_back(glGetUniformLocation(shader.getProgramIndex(), "s_l_pos1"));
+	spotLSpot_uniformId =glGetUniformLocation(shader.getProgramIndex(), "s_l_spot");
+	spotLThreshold_uniformId = glGetUniformLocation(shader.getProgramIndex(), "spot_l_threshold");
+	spotLToggled_uniformId = glGetUniformLocation(shader.getProgramIndex(), "spot_l_toggled");
 	
 	printf("InfoLog for Per Fragment Phong Lightning Shader\n%s\n\n", shader.getAllInfoLogs().c_str());
 

@@ -172,6 +172,9 @@ void refresh(int value)
 			trees[i].updateTree(1.0 / FPS);
 		}
 	}
+	if (statue->getColided()) {
+		statue->updateStatue(1.0 / FPS);
+	}
 	glutPostRedisplay();
 	glutTimerFunc(1000 / FPS, refresh, 0);
 
@@ -249,7 +252,8 @@ void renderScene(void) {
 			delete[] pos;
 			glUniform4fv(spotLPos_uniformIds[i], 1, res);
 		}
-		multMatrixPoint(VIEW, sleigh->get_direction(), res);
+		float* dir = sleigh->get_direction();
+		multMatrixPoint(VIEW, dir, res);
 		glUniform4fv(spotLSpot_uniformId, 1, res);
 		glUniform1f(spotLThreshold_uniformId, cos(spotLightAngle));
 		glUniform1i(spotLToggled_uniformId, spotLightToggled);
@@ -563,6 +567,7 @@ void init()
 	uInfo.snowballs = &snowballs;
 	uInfo.houses = &houses;
 	uInfo.trees = &trees;
+	uInfo.statue = statue;
 
 	cams.push_back(Camera(0.0f, 20.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1, 0, 0, 0));
 	cams.push_back(Camera(0.0f, 20.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1, 0, 0, 1));

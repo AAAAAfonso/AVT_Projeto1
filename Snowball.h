@@ -154,6 +154,10 @@ public:
 		this->alive = false;
 	}
 
+	bool isAlive() {
+		return this->alive;
+	}
+
 	float* getPosition() {
 		return pos;
 	}

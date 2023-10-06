@@ -58,6 +58,17 @@ public:
 
 	bool detectColisionAABBbox(struct update_info* uInfo) {
 		bool col_detected = false;
+
+		if ((*(uInfo->statue)).aabb_min[0] <= this->aabb_max[0] &&
+			(*(uInfo->statue)).aabb_max[0] >= this->aabb_min[0] &&
+			(*(uInfo->statue)).aabb_min[1] <= this->aabb_max[1] &&
+			(*(uInfo->statue)).aabb_max[1] >= this->aabb_min[1] &&
+			(*(uInfo->statue)).aabb_min[2] <= this->aabb_max[2] &&
+			(*(uInfo->statue)).aabb_max[2] >= this->aabb_min[2]) {
+			(*(uInfo->statue)).setColided(dir);
+			col_detected = true;
+		}
+
 		for (unsigned int i = 0; i < uInfo->houses->size(); i++) {
 			if ((*(uInfo->houses))[i].aabb_min[0] <= this->aabb_max[0] &&
 				(*(uInfo->houses))[i].aabb_max[0] >= this->aabb_min[0] &&
@@ -122,6 +133,9 @@ public:
 	}
 	bool detectColisionSphere(struct update_info* uInfo) {
 		for (int i = 0; i < uInfo->snowballs->size(); i++) {
+			if (!(*(uInfo->snowballs))[i].isAlive())
+				continue;
+
 			float pos[3];
 			pos[0] = (*(uInfo->snowballs))[i].getPosition()[0];
 			pos[1] = (*(uInfo->snowballs))[i].getPosition()[1];
@@ -137,6 +151,7 @@ public:
 
 			if (distance < (*(uInfo->snowballs))[i].getRadius() ) {
 				missionFail();
+				(*(uInfo->snowballs))[i].KillBall();
 				return true;
 			}
 		}
@@ -151,9 +166,9 @@ public:
 	float* get_spotlight_pos(int n) {
 		float* pos = new float[4];
 
-		pos[0] = this->pos[0] + 0.5 * sin(hAngle - (n * 2 - 1) * 0.4) * cos(vAngle);
-		pos[1] = this->pos[1] + 0.5 * sin(vAngle);
-		pos[2] = this->pos[2] + 0.5 * cos(hAngle - (n * 2 - 1) * 0.4) * cos(vAngle);
+		pos[0] = this->pos[0] + 0.5 * sin(hAngle * 3.14f / 180 - (n * 2 - 1) * 0.4) * cos(vAngle * 3.14f / 180);
+		pos[1] = this->pos[1] + 0.5 * sin(vAngle * 3.14f / 180);
+		pos[2] = this->pos[2] + 0.5 * cos(hAngle * 3.14f / 180 - (n * 2 - 1) * 0.4) * cos(vAngle * 3.14f / 180);
 		pos[3] = 1.0f;
 		
 		return pos;

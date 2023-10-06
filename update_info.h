@@ -4,6 +4,7 @@
 #include "House.h"
 #include "Tree.h"
 #include "Snowball.h"
+#include "Statue.h"
 
 struct update_info {
 	short accelerating;
@@ -12,8 +13,7 @@ struct update_info {
 	std::vector<House> *houses;
 	std::vector<Tree> *trees;
 	std::vector<SnowBall>* snowballs;
-
-
+	Statue* statue;
 };
 
 #endif

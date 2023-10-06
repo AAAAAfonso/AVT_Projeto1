@@ -48,6 +48,7 @@
 #include "Lamppost.h"
 #include "House.h"
 #include "Tree.h"
+#include "Statue.h"
 
 
 using namespace std;
@@ -95,6 +96,9 @@ GLint spotLSpot_uniformId;
 GLint spotLThreshold_uniformId;
 GLint spotLToggled_uniformId;
 
+bool fogToggled = true;
+GLint fogToggled_uniformId;
+
 GLint textured_uniformId;
 GLuint TextureArray[2];
 
@@ -130,6 +134,7 @@ vector<Lamppost> lampposts;
 vector<SnowBall> snowballs;
 vector<House> houses;
 vector<Tree> trees;
+Statue* statue;
 
 
 void timer(int value)
@@ -152,7 +157,8 @@ void updateGameSpeed(int value) {
 void refresh(int value)
 {
 	sleigh->update(1.0f / FPS, &uInfo);
-	cams[2].update(sleigh->get_pos(), sleigh->get_direction());
+	if (!tracking)
+		cams[2].update(sleigh->get_pos(), sleigh->get_direction());
 	for (int i = 0; i < snowballs.size(); i++) {
 		snowballs[i].updateSnowBallPosition(1.0f / FPS);
 	}
@@ -199,6 +205,9 @@ void renderScene(void) {
 
 	FrameCount++;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+
 	// load identity matrices
 	loadIdentity(VIEW);
 	loadIdentity(MODEL);
@@ -245,6 +254,8 @@ void renderScene(void) {
 		glUniform1f(spotLThreshold_uniformId, cos(spotLightAngle));
 		glUniform1i(spotLToggled_uniformId, spotLightToggled);
 
+		glUniform1i(fogToggled_uniformId, fogToggled);
+
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
 		glActiveTexture(GL_TEXTURE1);
@@ -260,6 +271,7 @@ void renderScene(void) {
 	for (int i = 0; i < snowballs.size(); i++) snowballs[i].render(rInfo);
 	for (int i = 0; i < houses.size(); i++) houses[i].render(rInfo);
 	for (int i = 0; i < trees.size(); i++) trees[i].render(rInfo);
+	statue->render(rInfo);
 
 	//Render text (bitmap fonts) in screen coordinates. So use ortoghonal projection with viewport coordinates.
 	glDisable(GL_DEPTH_TEST);
@@ -327,6 +339,9 @@ void processKeys(unsigned char key, int xx, int yy)
 			break;
 		case 'h':
 			spotLightToggled = !spotLightToggled;
+			break;
+		case 'f':
+			fogToggled = !fogToggled;
 			break;
 
 		case 27:
@@ -409,10 +424,9 @@ void processMouseMotion(int xx, int yy)
 			rAux = 0.1f;
 	}
 
-	//camX = rAux * sin(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f);
-	//camZ = rAux * cos(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f);
-	//camY = rAux *   						       sin(betaAux * 3.14f / 180.0f);
-
+	cams[2].set_pos(0, rAux * sin(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f) + sleigh->get_pos()[0]);
+	cams[2].set_pos(2, rAux * cos(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f) + sleigh->get_pos()[2]);
+	cams[2].set_pos(1, rAux *   						       sin(betaAux * 3.14f / 180.0f) + sleigh->get_pos()[1]);
 //  uncomment this if not using an idle or refresh func
 //	glutPostRedisplay();
 }
@@ -424,9 +438,9 @@ void mouseWheel(int wheel, int direction, int x, int y) {
 	if (r < 0.1f)
 		r = 0.1f;
 
-	//camX = r * sin(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f);
-	//camZ = r * cos(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f);
-	//camY = r *   						     sin(beta * 3.14f / 180.0f);
+	cams[2].set_pos(0, r * sin(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f));
+	cams[2].set_pos(2, r * cos(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f));
+	cams[2].set_pos(1, r *   						     sin(beta * 3.14f / 180.0f));
 
 //  uncomment this if not using an idle or refresh func
 //	glutPostRedisplay();
@@ -454,10 +468,10 @@ GLuint setupShaders() {
 	glLinkProgram(shader.getProgramIndex());
 	printf("InfoLog for Model Rendering Shader\n%s\n\n", shaderText.getAllInfoLogs().c_str());
 
-	//if (!shader.isProgramValid()) {
-	//	printf("GLSL Model Program Not Valid!\n");
-	//	exit(1);
-	//}
+	if (!shader.isProgramValid()) {
+		printf("GLSL Model Program Not Valid!\n");
+		exit(1);
+	}
 
 	pvm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_pvm");
 	vm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_viewModel");
@@ -482,6 +496,8 @@ GLuint setupShaders() {
 	spotLSpot_uniformId =glGetUniformLocation(shader.getProgramIndex(), "s_l_spot");
 	spotLThreshold_uniformId = glGetUniformLocation(shader.getProgramIndex(), "spot_l_threshold");
 	spotLToggled_uniformId = glGetUniformLocation(shader.getProgramIndex(), "spot_l_toggled");
+
+	fogToggled_uniformId = glGetUniformLocation(shader.getProgramIndex(), "fog_toggled");
 	
 	printf("InfoLog for Per Fragment Phong Lightning Shader\n%s\n\n", shader.getAllInfoLogs().c_str());
 
@@ -493,10 +509,10 @@ GLuint setupShaders() {
 	glLinkProgram(shaderText.getProgramIndex());
 	printf("InfoLog for Text Rendering Shader\n%s\n\n", shaderText.getAllInfoLogs().c_str());
 
-	//if (!shaderText.isProgramValid()) {
-	//	printf("GLSL Text Program Not Valid!\n");
-	//	exit(1);
-	//}
+	if (!shaderText.isProgramValid()) {
+		printf("GLSL Text Program Not Valid!\n");
+		exit(1);
+	}
 	
 	return(shader.isProgramLinked() && shaderText.isProgramLinked());
 }
@@ -542,6 +558,7 @@ void init()
 		size = rand() % 15 * 0.01f + 0.05f;
 		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 24 - 11.5f + (rand() % 10) * 0.1f - 0.5, rand() % 6 + 6.5f + (rand() % 10) * 0.1f - 0.5));
 	}
+	statue = new Statue(7.0f, 0.0f);
 
 	uInfo.snowballs = &snowballs;
 	uInfo.houses = &houses;

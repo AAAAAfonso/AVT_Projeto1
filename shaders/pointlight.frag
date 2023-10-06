@@ -5,7 +5,7 @@ out vec4 colorOut;
 uniform bool dir_l_toggled;
 uniform bool point_l_toggled;
 uniform bool spot_l_toggled;
-//uniform bool fog_toggled;
+uniform bool fog_toggled;
 
 uniform float spot_l_threshold;
 
@@ -102,6 +102,8 @@ void main() {
 		colorOut = min(colorOut + mat.ambient, 1.0f);
 	}
 
-	vec3 final_color = mix(fogColor, vec3(colorOut), fogAmount );
-	colorOut = vec4(final_color, 1);
+	if (fog_toggled) {
+		vec3 final_color = mix(fogColor, vec3(colorOut), fogAmount );
+		colorOut = vec4(final_color, 1);
+	}
 }

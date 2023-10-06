@@ -48,8 +48,8 @@ public:
 		dir[1] = -sin(vAngle * 3.14f / 180);
 		dir[2] = cos(vAngle * 3.14f / 180) * cos(hAngle * 3.14f / 180);
 
-		aabb_max[0] = 0.6 + x; aabb_max[1] = 0.6f + y;	aabb_max[2] = 1.0f + z;
-		aabb_min[0] = x; aabb_max[1] = y;	aabb_max[2] = z;
+		
+		updateAABB();
 	}
 
 	float *get_direction() {
@@ -107,7 +107,20 @@ public:
 
 	}
 
-	void detectColisionSphere(struct update_info* uInfo) {
+	void missionFail() {
+		this->pos[0] = 0;
+		this->pos[1] = 0;
+		this->pos[1] = 0;
+		this->speed = 0.0f;
+		dir[0] = cos(vAngle * 3.14f / 180) * sin(hAngle * 3.14f / 180);
+		dir[1] = -sin(vAngle * 3.14f / 180);
+		dir[2] = cos(vAngle * 3.14f / 180) * cos(hAngle * 3.14f / 180);
+		this->hAngle = 90.0;
+		this->vAngle = 0.0;
+		updateAABB();
+
+	}
+	bool detectColisionSphere(struct update_info* uInfo) {
 		for (int i = 0; i < uInfo->snowballs->size(); i++) {
 			float pos[3];
 			pos[0] = (*(uInfo->snowballs))[i].getPosition()[0];
@@ -123,9 +136,12 @@ public:
 				(z - pos[2]) * (z - pos[2]));
 
 			if (distance < (*(uInfo->snowballs))[i].getRadius() ) {
-				(*(uInfo->snowballs))[i].KillBall();
+				missionFail();
+				return true;
 			}
 		}
+		return false;
+
 	}
 
 	float *get_pos() {
@@ -161,7 +177,7 @@ public:
 
 
 		updateAABB();
-		detectColisionSphere(uInfo);
+		if(detectColisionSphere(uInfo)) return;
 		if (!detectColisionAABBbox(uInfo)) {
 			dir[0] = cos(vAngle * 3.14f / 180) * sin(hAngle * 3.14f / 180);
 			dir[1] = -sin(vAngle * 3.14f / 180);

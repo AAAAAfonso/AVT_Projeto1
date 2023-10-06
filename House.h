@@ -12,8 +12,8 @@ private:
 	float x, z;
 	
 	bool colided = false;
-	const float timer = 1.0f;
-	const float speed = 0.2f;
+	const float timer = 0.5f;
+	const float speed = 1.0f;
 	float currentTime = 0.0f;
 	float dir[2];
 

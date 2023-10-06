@@ -13,6 +13,10 @@ uniform vec4 p_l_pos3;
 uniform vec4 p_l_pos4;
 uniform vec4 p_l_pos5;
 
+uniform vec4 s_l_pos0;
+uniform vec4 s_l_pos1;
+uniform vec4 s_l_spot;
+
 in vec4 position;
 in vec4 normal;    //por causa do gerador de geometria
 in vec4 texCoord;
@@ -22,6 +26,8 @@ out Data {
 	vec3 eye;
 	vec3 dirLightDir;
 	vec3 pointLightDir[6];
+	vec3 spotLightDir[2];
+	vec3 spotLightSpot;
 	vec2 tex_coord;
 } DataOut;
 
@@ -43,6 +49,10 @@ void main () {
 	DataOut.pointLightDir[3] = vec3(p_l_pos3 - pos);
 	DataOut.pointLightDir[4] = vec3(p_l_pos4 - pos);
 	DataOut.pointLightDir[5] = vec3(p_l_pos5 - pos);
+
+	DataOut.spotLightDir[0] = vec3(s_l_pos0 - pos);
+	DataOut.spotLightDir[1] = vec3(s_l_pos1 - pos);
+	DataOut.spotLightSpot = vec3(s_l_spot);
 
 	DataOut.tex_coord = texCoord.st;
 

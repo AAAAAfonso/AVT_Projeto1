@@ -4,7 +4,10 @@ out vec4 colorOut;
 
 uniform bool dir_l_toggled;
 uniform bool point_l_toggled;
+uniform bool spot_l_toggled;
 //uniform bool fog_toggled;
+
+uniform float spot_l_threshold;
 
 uniform sampler2D texmap;
 uniform sampler2D texmap1;
@@ -29,6 +32,8 @@ in Data {
 	vec3 eye;
 	vec3 dirLightDir;
 	vec3 pointLightDir[6];
+	vec3 spotLightDir[2];
+	vec3 spotLightSpot;
 	vec2 tex_coord;
 } DataIn;
 
@@ -70,13 +75,29 @@ void main() {
 		}
 		colorOut += intensity * mat.diffuse + spec;
 	}
+
+	// calculations for the spotlight
+	if(spot_l_toggled)  {  //Scene iluminated by a spotlight
+		for (int i = 0; i < 2; i++) {
+			vec3 s_l = normalize(DataIn.spotLightDir[i]);
+			vec3 s_d = normalize(DataIn.spotLightSpot);
+			if (dot(s_l, s_d) > spot_l_threshold) {
+				float intensity = max(dot(n,s_l), 0.0);
+				if (intensity > 0.0) {
+					vec3 h = normalize(s_l + e);
+					float intSpec = max(dot(h,n), 0.0);
+					spec = mat.specular * pow(intSpec, mat.shininess);
+				}
+				colorOut += intensity * mat.diffuse + spec;
+			}
+		}
+	}
 	
 	if (textured) {
 		vec4 texel, texel1;
 		texel = texture(texmap, DataIn.tex_coord);
 		texel1 = texture(texmap1, DataIn.tex_coord);
-
-		colorOut = min(texel*texel1, 1.0f);
+		colorOut = min(texel*texel1*colorOut, 1.0f);
 	} else {
 		colorOut = min(colorOut + mat.ambient, 1.0f);
 	}

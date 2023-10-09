@@ -178,7 +178,7 @@ public:
 		float* pos = new float[4];
 
 		pos[0] = this->pos[0] + 0.5 * sin(hAngle * 3.14f / 180 - (n * 2 - 1) * 0.4) * cos(vAngle * 3.14f / 180);
-		pos[1] = this->pos[1] + 0.5 * sin(vAngle * 3.14f / 180);
+		pos[1] = 0.2f + this->pos[1] + 0.5 * sin(vAngle * 3.14f / 180);
 		pos[2] = this->pos[2] + 0.5 * cos(hAngle * 3.14f / 180 - (n * 2 - 1) * 0.4) * cos(vAngle * 3.14f / 180);
 		pos[3] = 1.0f;
 		

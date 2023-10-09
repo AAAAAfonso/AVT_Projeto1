@@ -258,6 +258,7 @@ void renderScene(void) {
 			glUniform4fv(spotLPos_uniformIds[i], 1, res);
 		}
 		float* dir = sleigh->get_direction();
+		dir[3] = 1.0f;
 		multMatrixPoint(VIEW, dir, res);
 		glUniform4fv(spotLSpot_uniformId, 1, res);
 		glUniform1f(spotLThreshold_uniformId, cos(spotLightAngle));

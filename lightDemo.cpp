@@ -107,7 +107,7 @@ int startX, startY, tracking = 0;
 
 // Camera Spherical Coordinates
 float alpha = 39.0f, beta = 51.0f;
-float r = 10.0f;
+float r = 15.0f;
 
 // Frame counting and FPS computation
 long myTime,timebase = 0,frame = 0;
@@ -118,7 +118,7 @@ bool dirLightToggled = true;
 bool pointLightToggled = true;
 bool spotLightToggled = true;
 
-float spotLightAngle = 20.0f;
+float spotLightAngle = 10.0f;
 
 vector<Camera> cams;
 short active_camera = 0;
@@ -260,10 +260,10 @@ void renderScene(void) {
 			glUniform4fv(spotLPos_uniformIds[i], 1, res);
 		}
 		float* dir = sleigh->get_direction();
-		dir[3] = 1.0f;
+		dir[3] = 0.0f;
 		multMatrixPoint(VIEW, dir, res);
 		glUniform4fv(spotLSpot_uniformId, 1, res);
-		glUniform1f(spotLThreshold_uniformId, cos(spotLightAngle));
+		glUniform1f(spotLThreshold_uniformId, cos(spotLightAngle * 3.14f / 180));
 		glUniform1i(spotLToggled_uniformId, spotLightToggled);
 
 		glUniform1i(fogToggled_uniformId, fogToggled);

@@ -78,9 +78,9 @@ void main() {
 
 	// calculations for the spotlight
 	if(spot_l_toggled)  {  //Scene iluminated by a spotlight
+		vec3 s_d = normalize(DataIn.spotLightSpot);
 		for (int i = 0; i < 2; i++) {
 			vec3 s_l = normalize(DataIn.spotLightDir[i]);
-			vec3 s_d = normalize(DataIn.spotLightSpot);
 			if (dot(s_l, s_d) > spot_l_threshold) {
 				float intensity = max(dot(n,s_l), 0.0);
 				if (intensity > 0.0) {

@@ -52,7 +52,7 @@ void main () {
 
 	DataOut.spotLightDir[0] = vec3(s_l_pos0 - pos);
 	DataOut.spotLightDir[1] = vec3(s_l_pos1 - pos);
-	DataOut.spotLightSpot = vec3(s_l_spot);
+	DataOut.spotLightSpot = vec3(-s_l_spot);
 
 	DataOut.tex_coord = texCoord.st;
 

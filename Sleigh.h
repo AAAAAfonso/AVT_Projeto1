@@ -188,16 +188,12 @@ public:
 	void update(float deltaTime, struct update_info *uInfo) {
 		static float hAngle_prev = 0.0f; static float vAngle_prev = 0.0f;
 		hAngle += uInfo->h_turning * 180.0f * deltaTime;
-		uInfo->h_turning = 0.0f;
-
 		vAngle += uInfo->v_turning * 180.0f * deltaTime;
-		uInfo->v_turning = 0.0f;
 		if (vAngle < -30.0f) vAngle = -30.0f;
 		else if (vAngle > 30.0f) vAngle = 30.0f;
 
 
 		speed += uInfo->accelerating * 10.0f * deltaTime;
-		uInfo->accelerating = -1.0f;
 		if (speed < 0) speed = 0;
 		else if (speed > 10.0f) speed = 10.0f;
 

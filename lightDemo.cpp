@@ -126,6 +126,8 @@ short active_camera = 0;
 float ratio = WinX / WinY;
 
 struct update_info uInfo = { 0.0f, 0.0f, 0.0f };
+struct keyboard_key_tracking uTrack = { false, false, false, false, false};
+
 
 // Create objects
 Terrain* terrain;
@@ -311,23 +313,35 @@ void renderScene(void) {
 // Events from the Keyboard
 //
 
-void processKeys(unsigned char key, int xx, int yy)
+void processKeysDown(unsigned char key, int xx, int yy)
 {
 	switch(key) {
 		case 'w':
-			uInfo.v_turning = -1;
+			if(uTrack.w_key == false)
+				uInfo.v_turning += -1;
+			uTrack.w_key = true;
 			break;
 		case 'a':
-			uInfo.h_turning = 1;
+			if (uTrack.a_key == false)
+				uInfo.h_turning += 1;
+			uTrack.a_key = true;
 			break;
 		case 's':
-			uInfo.v_turning = 1;
+			if (uTrack.s_key == false)
+
+				uInfo.v_turning += 1;
+			uTrack.s_key = true;
+
 			break;
 		case 'd':
-			uInfo.h_turning = -1;
+			if (uTrack.d_key == false)
+				uInfo.h_turning += -1;
+			uTrack.d_key = true;
 			break;
 		case 'o':
-			uInfo.accelerating = 1;
+			if (uTrack.o_key == false)
+				uInfo.accelerating = 1;
+			uTrack.o_key = true;
 			break;
 
 		case '1':
@@ -365,6 +379,39 @@ void processKeys(unsigned char key, int xx, int yy)
 	}
 }
 
+
+void processKeysUp(unsigned char key, int xx, int yy)
+{
+	switch (key) {
+	case 'w':
+		uInfo.v_turning -= -1;
+		uTrack.w_key = false;
+		break;
+	case 'a':
+		uInfo.h_turning -= 1;
+		uTrack.a_key = false;
+		break;
+	case 's':
+		uInfo.v_turning -= 1;
+		uTrack.s_key = false;
+
+		break;
+	case 'd':
+		uInfo.h_turning -= -1;
+		uTrack.d_key = false;
+
+		break;
+	case 'o':
+		uInfo.accelerating = -1;
+		uTrack.o_key = false;
+
+		break;
+
+	case 27:
+		glutLeaveMainLoop();
+		break;
+	}
+}
 
 // ------------------------------------------------------------
 //
@@ -619,7 +666,9 @@ int main(int argc, char **argv) {
 	glutTimerFunc(0, refresh, 0);    //use it to to get 60 FPS whatever
 
 //	Mouse and Keyboard Callbacks
-	glutKeyboardFunc(processKeys);
+	glutKeyboardFunc(processKeysDown);
+	glutKeyboardUpFunc(processKeysUp);
+
 	glutMouseFunc(processMouseButtons);
 	glutMotionFunc(processMouseMotion);
 	glutMouseWheelFunc ( mouseWheel ) ;

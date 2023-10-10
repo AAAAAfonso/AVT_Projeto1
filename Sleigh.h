@@ -209,6 +209,7 @@ public:
 			hAngle_prev = hAngle;
 		}
 		else {
+			uInfo->accelerating = -1.0;
 			hAngle = hAngle_prev;
 			vAngle = vAngle_prev;
 			speed = 0;

@@ -13,6 +13,7 @@ private:
 	float hAngle;
 	float vAngle = 0.0f;
 	float speed = 0.0f;
+	int lives = 5;
 
 	MyMesh board;
 
@@ -54,6 +55,19 @@ public:
 
 	float *get_direction() {
 		return dir;
+	}
+
+	void decrease_lives() {
+		lives--;
+		if (lives == 0) reset_lives();
+	}
+
+	void reset_lives() {
+		lives = 5;
+	}
+
+	int get_lives() {
+		return lives;
 	}
 
 	bool detectColisionAABBbox(struct update_info* uInfo) {
@@ -139,6 +153,7 @@ public:
 		dir[2] = cos(vAngle * 3.14f / 180) * cos(hAngle * 3.14f / 180);
 		this->hAngle = 90.0;
 		this->vAngle = 0.0;
+		decrease_lives();
 		updateAABB();
 
 	}

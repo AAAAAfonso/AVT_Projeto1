@@ -139,6 +139,9 @@ vector<Tree> trees;
 Statue* statue;
 
 
+bool paused = false;
+
+
 void timer(int value)
 {
 	std::ostringstream oss;
@@ -158,30 +161,33 @@ void updateGameSpeed(int value) {
 }
 void refresh(int value)
 {
-	sleigh->update(1.0f / FPS, &uInfo);
-	if (!tracking)
-		cams[2].update(sleigh->get_pos(), sleigh->get_direction());
-	for (int i = 0; i < snowballs.size(); i++) {
-		snowballs[i].updateSnowBallPosition(1.0f / FPS);
-	}
-	for (int i = 0; i < houses.size(); i++) {
-		if (houses[i].getColided()) {
-			houses[i].updateHouse(1.0/FPS);
+	if (!paused) {
+		sleigh->update(1.0f / FPS, &uInfo);
+		if (!tracking)
+			cams[2].update(sleigh->get_pos(), sleigh->get_direction());
+		for (int i = 0; i < snowballs.size(); i++) {
+			snowballs[i].updateSnowBallPosition(1.0f / FPS);
+		}
+		for (int i = 0; i < houses.size(); i++) {
+			if (houses[i].getColided()) {
+				houses[i].updateHouse(1.0 / FPS);
+			}
+		}
+		for (int i = 0; i < trees.size(); i++) {
+			if (trees[i].getColided()) {
+				trees[i].updateTree(1.0 / FPS);
+			}
+		}
+		for (int i = 0; i < lampposts.size(); i++) {
+			if (lampposts[i].getColided()) {
+				lampposts[i].updateLamppost(1.0 / FPS);
+			}
+		}
+		if (statue->getColided()) {
+			statue->updateStatue(1.0 / FPS);
 		}
 	}
-	for (int i = 0; i < trees.size(); i++) {
-		if (trees[i].getColided()) {
-			trees[i].updateTree(1.0 / FPS);
-		}
-	}
-	for (int i = 0; i < lampposts.size(); i++) {
-		if (lampposts[i].getColided()) {
-			lampposts[i].updateLamppost(1.0 / FPS);
-		}
-	}
-	if (statue->getColided()) {
-		statue->updateStatue(1.0 / FPS);
-	}
+
 	glutPostRedisplay();
 	glutTimerFunc(1000 / FPS, refresh, 0);
 
@@ -287,9 +293,6 @@ void renderScene(void) {
 
 	//Render text (bitmap fonts) in screen coordinates. So use ortoghonal projection with viewport coordinates.
 	glDisable(GL_DEPTH_TEST);
-	//the glyph contains transparent background colors and non-transparent for the actual character pixels. So we use the blending
-	glEnable(GL_BLEND);  
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	int m_viewport[4];
 	glGetIntegerv(GL_VIEWPORT, m_viewport);
 
@@ -300,11 +303,13 @@ void renderScene(void) {
 	loadIdentity(PROJECTION);
 	pushMatrix(VIEW);
 	loadIdentity(VIEW);
+	ortho(m_viewport[0], m_viewport[0] + m_viewport[2] - 1, m_viewport[1], m_viewport[1] + m_viewport[3] - 1, -1, 1);
+	if (paused)
+		//RenderText(shaderText, "PAUSED", 25.0f, 25.0f, 1.0f, 0.5f, 0.8f, 0.2f);
 	popMatrix(PROJECTION);
 	popMatrix(VIEW);
 	popMatrix(MODEL);
 	glEnable(GL_DEPTH_TEST);
-	glDisable(GL_BLEND);
 
 	glutSwapBuffers();
 }
@@ -405,7 +410,14 @@ void processKeysUp(unsigned char key, int xx, int yy)
 	case 'o':
 		uInfo.accelerating = -1;
 		uTrack.o_key = false;
+		break;
 
+	case 'p':
+		paused = !paused;
+		break;
+	case 'r':
+		sleigh->missionFail();
+		sleigh->reset_lives();
 		break;
 
 	case 27:

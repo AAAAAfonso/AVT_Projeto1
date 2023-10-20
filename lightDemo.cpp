@@ -26,6 +26,10 @@
 
 #include <IL/il.h>
 
+//assimp lib
+#include "assimp/Importer.hpp"	//OO version Header!
+#include "assimp/scene.h"
+
 // Use Very Simple Libs
 #include "VSShaderlib.h"
 #include "AVTmathLib.h"
@@ -49,6 +53,7 @@
 #include "House.h"
 #include "Tree.h"
 #include "Statue.h"
+
 
 
 using namespace std;
@@ -79,6 +84,10 @@ extern float mCompMatrix[COUNT_COMPUTED_MATRICES][16];
 
 /// The normal matrix
 extern float mNormal3x3[9];
+
+extern const aiScene* scene;
+
+char model_dir[50];
 
 GLint pvm_uniformId;
 GLint vm_uniformId;
@@ -581,6 +590,8 @@ GLuint setupShaders() {
 
 void init()
 {
+	std::string filepath;
+
 	/* Initialization of DevIL */
 	if (ilGetInteger(IL_VERSION_NUM) < IL_VERSION)
 	{
@@ -599,7 +610,7 @@ void init()
 	freeType_init(font_name);
 
 	terrain = new Terrain(25.0f, 25.0f);
-	sleigh = new Sleigh(0.0f, 0.0f, 0.0f, 90.0f);
+	sleigh = new Sleigh(0.0f, 0.0f, 0.0f, 0.0f);
 	for (int i = 0; i < 360; i += 360 / 12) {
 		snowballs.push_back(SnowBall(0.5f, i, 7.0f));
 	}

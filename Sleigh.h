@@ -65,9 +65,9 @@ public:
 
 		createMesh();
 
-		dir[2] = cos(vAngle * 3.14f / 180) * sin(hAngle * 3.14f / 180);
+		dir[0] = cos(vAngle * 3.14f / 180) * sin(hAngle * 3.14f / 180);
 		dir[1] = -sin(vAngle * 3.14f / 180);
-		dir[0] = cos(vAngle * 3.14f / 180) * cos(hAngle * 3.14f / 180);
+		dir[2] = cos(vAngle * 3.14f / 180) * cos(hAngle * 3.14f / 180);
 
 		
 		updateAABB();
@@ -168,9 +168,9 @@ public:
 		this->pos[1] = 0;
 		this->pos[2] = 0;
 		this->speed = 0.0f;
-		dir[2] = cos(vAngle * 3.14f / 180) * sin(hAngle * 3.14f / 180);
+		dir[0] = cos(vAngle * 3.14f / 180) * sin(hAngle * 3.14f / 180);
 		dir[1] = -sin(vAngle * 3.14f / 180);
-		dir[0] = cos(vAngle * 3.14f / 180) * cos(hAngle * 3.14f / 180);
+		dir[2] = cos(vAngle * 3.14f / 180) * cos(hAngle * 3.14f / 180);
 		this->hAngle = 0.0;
 		this->vAngle = 0.0;
 		decrease_lives();
@@ -236,9 +236,9 @@ public:
 		updateAABB();
 		if(detectColisionSphere(uInfo)) return;
 		if (!detectColisionAABBbox(uInfo)) {
-			dir[2] = cos(vAngle * 3.14f / 180) * sin(hAngle * 3.14f / 180);
+			dir[0] = cos(vAngle * 3.14f / 180) * sin(hAngle * 3.14f / 180);
 			dir[1] = -sin(vAngle * 3.14f / 180);
-			dir[0] = cos(vAngle * 3.14f / 180) * cos(hAngle * 3.14f / 180);
+			dir[2] = cos(vAngle * 3.14f / 180) * cos(hAngle * 3.14f / 180);
 			for (int i = 0; i < 3; i++) pos[i] += speed * dir[i] * deltaTime;
 			vAngle_prev = vAngle;
 			hAngle_prev = hAngle;
@@ -360,9 +360,11 @@ public:
 
 	void render(struct render_info rInfo) {
 		pushMatrix(MODEL);
+		
+
 		translate(MODEL, pos[0], pos[1], pos[2]);
-		rotate(MODEL, hAngle, 0.0f, -1.0f, 0.0f);
-		rotate(MODEL, vAngle, 0.0f, 0.0f, -1.0f);
+		rotate(MODEL, hAngle - 90, 0.0f, 1.0f, 0.0f);
+		rotate(MODEL, vAngle, 0.0, 0.0f, -1.0f);
 		scale(MODEL, scaleFactor, scaleFactor, scaleFactor);
 		aiRecursive_render(rInfo, scene, scene->mRootNode);
 		popMatrix(MODEL);

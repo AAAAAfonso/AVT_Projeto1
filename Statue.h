@@ -60,6 +60,9 @@ public:
 	}
 
 	void render(struct render_info rInfo) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 		GLint loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.ambient");
 		glUniform4fv(loc, 1, head.mat.ambient);
 		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.diffuse");
@@ -115,6 +118,7 @@ public:
 		glBindVertexArray(0);
 
 		popMatrix(MODEL);
+		glDisable(GL_BLEND);
 	}
 
 

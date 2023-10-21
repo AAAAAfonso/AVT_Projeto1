@@ -8,7 +8,7 @@
 // The code comes with no warranties, use it at your own risk.
 // You may use it, or parts of it, wherever you want.
 // 
-// Author: João Madeiras Pereira
+// Author: Joï¿½o Madeiras Pereira
 //
 
 #include <math.h>
@@ -230,8 +230,6 @@ void renderScene(void) {
 
 	FrameCount++;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_BLEND);
 
 	// load identity matrices
 	loadIdentity(VIEW);
@@ -302,6 +300,8 @@ void renderScene(void) {
 
 	//Render text (bitmap fonts) in screen coordinates. So use ortoghonal projection with viewport coordinates.
 	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	int m_viewport[4];
 	glGetIntegerv(GL_VIEWPORT, m_viewport);
 
@@ -313,12 +313,15 @@ void renderScene(void) {
 	pushMatrix(VIEW);
 	loadIdentity(VIEW);
 	ortho(m_viewport[0], m_viewport[0] + m_viewport[2] - 1, m_viewport[1], m_viewport[1] + m_viewport[3] - 1, -1, 1);
-	if (paused)
-		//RenderText(shaderText, "PAUSED", 25.0f, 25.0f, 1.0f, 0.5f, 0.8f, 0.2f);
+	//if (paused)
+	//	RenderText(shaderText, "PAUSED", m_viewport[2] / 2.0f - 100.0f, m_viewport[3] / 2.0f + 25.0f, 1.0f, 1.0f, 1.0f, 1.01f);
+	//RenderText(shaderText, "LIVES: ", 25.0f, m_viewport[3] - 50.0f, 1.0f, 0.5f, 0.8f, 0.2f);
+	//RenderText(shaderText, to_string(sleigh->get_lives()), 180.0f, m_viewport[3] - 50.0f, 1.0f, 0.5f, 0.8f, 0.2f);
 	popMatrix(PROJECTION);
 	popMatrix(VIEW);
 	popMatrix(MODEL);
 	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
 
 	glutSwapBuffers();
 }

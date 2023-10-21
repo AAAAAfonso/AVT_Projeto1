@@ -2,12 +2,28 @@
 #include <update_info.h>
 #include <render_info.h>
 #include <AVTmathLib.h>
+#include "meshFromAssimp.h"
+#include "assimp/scene.h"
+#include <string>
+
+using namespace std;
 
 extern float mCompMatrix[COUNT_COMPUTED_MATRICES][16];
 extern float mNormal3x3[9];
+std::string filepath = "./slitta_babbo/SLITTABABBO.obj";
+extern Assimp::Importer importer;
+extern const aiScene* scene;
+GLint normalMap_loc;
+GLint specularMap_loc;
+GLint diffMapCount_loc;
+extern float scaleFactor;
+
+
 
 class Sleigh {
 private:
+	std::vector<struct MyMesh> myMeshes;
+
 	float pos[4];
 	float dir[4];
 	float hAngle;
@@ -25,7 +41,11 @@ private:
 		float shininess = 100.0f;
 		int texcount = 0;
 
-		board = createCube();
+			
+		if (!Import3DFromFile(filepath))
+			return;
+
+	 	myMeshes = createMeshFromAssimp(scene, filepath);
 
 		memcpy(board.mat.ambient, amb, 4 * sizeof(float));
 		memcpy(board.mat.diffuse, diff, 4 * sizeof(float));
@@ -151,7 +171,7 @@ public:
 		dir[0] = cos(vAngle * 3.14f / 180) * sin(hAngle * 3.14f / 180);
 		dir[1] = -sin(vAngle * 3.14f / 180);
 		dir[2] = cos(vAngle * 3.14f / 180) * cos(hAngle * 3.14f / 180);
-		this->hAngle = 90.0;
+		this->hAngle = 0.0;
 		this->vAngle = 0.0;
 		decrease_lives();
 		updateAABB();
@@ -224,7 +244,7 @@ public:
 			hAngle_prev = hAngle;
 		}
 		else {
-			uInfo->accelerating = -1.0;
+			uInfo->accelerating = -1.0;	
 			hAngle = hAngle_prev;
 			vAngle = vAngle_prev;
 			speed = 0;
@@ -237,230 +257,116 @@ public:
 
 	}
 
+	void aiRecursive_render(struct render_info rInfo, const aiScene* sc, const aiNode* nd)
+	{
+		GLint loc;
+
+		// Get node transformation matrix
+		aiMatrix4x4 m = nd->mTransformation;
+		// OpenGL matrices are column major
+		m.Transpose();
+
+		// save model matrix and apply node transformation
+		pushMatrix(MODEL);
+
+		float aux[16];
+		memcpy(aux, &m, sizeof(float) * 16);
+		multMatrix(MODEL, aux);
+
+
+		// draw all meshes assigned to this node
+		for (unsigned int n = 0; n < nd->mNumMeshes; ++n) {
+
+
+			// send the material
+			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.ambient");
+			glUniform4fv(loc, 1, myMeshes[nd->mMeshes[n]].mat.ambient);
+			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.diffuse");
+			glUniform4fv(loc, 1, myMeshes[nd->mMeshes[n]].mat.diffuse);
+			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.specular");
+			glUniform4fv(loc, 1, myMeshes[nd->mMeshes[n]].mat.specular);
+			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.emissive");
+			glUniform4fv(loc, 1, myMeshes[nd->mMeshes[n]].mat.emissive);
+			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
+			glUniform1f(loc, myMeshes[nd->mMeshes[n]].mat.shininess);
+			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.texCount");
+			glUniform1i(loc, myMeshes[nd->mMeshes[n]].mat.texCount);
+
+			unsigned int  diffMapCount = 0;  //read 2 diffuse textures
+
+			//devido ao fragment shader suporta 2 texturas difusas simultaneas, 1 especular e 1 normal map
+
+			glUniform1i(normalMap_loc, false);   //GLSL normalMap variable initialized to 0
+			glUniform1i(specularMap_loc, false);
+			glUniform1ui(diffMapCount_loc, 0);
+
+			if (myMeshes[nd->mMeshes[n]].mat.texCount != 0)
+				for (unsigned int i = 0; i < myMeshes[nd->mMeshes[n]].mat.texCount; ++i) {
+					if (myMeshes[nd->mMeshes[n]].texTypes[i] == DIFFUSE) {
+						if (diffMapCount == 0) {
+							diffMapCount++;
+							loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitDiff");
+							glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);
+							glUniform1ui(diffMapCount_loc, diffMapCount);
+						}
+						else if (diffMapCount == 1) {
+							diffMapCount++;
+							loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitDiff1");
+							glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);
+							glUniform1ui(diffMapCount_loc, diffMapCount);
+						}
+						else printf("Only supports a Material with a maximum of 2 diffuse textures\n");
+					}
+					else if (myMeshes[nd->mMeshes[n]].texTypes[i] == SPECULAR) {
+						loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitSpec");
+						glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);
+						glUniform1i(specularMap_loc, true);
+					}
+					else if (myMeshes[nd->mMeshes[n]].texTypes[i] == NORMALS) { //Normal map
+						loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitNormalMap");
+						/*if (normalMapKey)
+							glUniform1i(normalMap_loc, normalMapKey);*/
+						glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);
+
+					}
+					else printf("Texture Map not supported\n");
+				}
+
+			// send matrices to OGL
+			computeDerivedMatrix(PROJ_VIEW_MODEL);
+			glUniformMatrix4fv(rInfo.vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+			glUniformMatrix4fv(rInfo.pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+			computeNormalMatrix3x3();
+			glUniformMatrix3fv(rInfo.normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+			// bind VAO
+			glBindVertexArray(myMeshes[nd->mMeshes[n]].vao);
+
+			if (!rInfo.shader.isProgramValid()) {
+				printf("Program Not Valid!\n");
+				exit(1);
+			}
+			// draw
+			glDrawElements(myMeshes[nd->mMeshes[n]].type, myMeshes[nd->mMeshes[n]].numIndexes, GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
+		}
+
+		// draw all children
+		for (unsigned int n = 0; n < nd->mNumChildren; ++n) {
+			this->aiRecursive_render(rInfo,sc, nd->mChildren[n]);
+		}
+		popMatrix(MODEL);
+	}
+
 	void render(struct render_info rInfo) {
-		GLint loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.ambient");
-		glUniform4fv(loc, 1, board.mat.ambient);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.diffuse");
-		glUniform4fv(loc, 1, board.mat.diffuse);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.specular");
-		glUniform4fv(loc, 1, board.mat.specular);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
-		glUniform1f(loc, board.mat.shininess);
-
-		glUniform1i(rInfo.textured_uniformId, false);
-
 		pushMatrix(MODEL);
-		translate(MODEL, pos[0], pos[1] + 0.2f, pos[2]);
-		rotate(MODEL, hAngle, 0.0f, 1.0f, 0.0f);
-		rotate(MODEL, vAngle, 1.0f, 0.0f, 0.0f);
-		scale(MODEL, 0.6f, 0.1f, 1.0f);
-		translate(MODEL, -0.5f, 0.0f, -0.5f);
+		
 
-		// send matrices to OGL
-		computeDerivedMatrix(PROJ_VIEW_MODEL);
-		glUniformMatrix4fv(rInfo.vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-		glUniformMatrix4fv(rInfo.pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-		computeNormalMatrix3x3();
-		glUniformMatrix3fv(rInfo.normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-		// Render mesh
-		glBindVertexArray(board.vao);
-
-		glDrawElements(board.type, board.numIndexes, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-
-		popMatrix(MODEL);
-
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.ambient");
-		glUniform4fv(loc, 1, board.mat.ambient);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.diffuse");
-		glUniform4fv(loc, 1, board.mat.diffuse);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.specular");
-		glUniform4fv(loc, 1, board.mat.specular);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
-		glUniform1f(loc, board.mat.shininess);
-
-		pushMatrix(MODEL);
 		translate(MODEL, pos[0], pos[1], pos[2]);
-		rotate(MODEL, hAngle, 0.0f, 1.0f, 0.0f);
-		rotate(MODEL, vAngle, 1.0f, 0.0f, 0.0f);
-		translate(MODEL, 0.25f, 0.0f, 0.0f);
-		scale(MODEL, 0.1f, 0.2f, 1.0f);
-		translate(MODEL, -0.5f, 0.0f, -0.5f);
-
-		// send matrices to OGL
-		computeDerivedMatrix(PROJ_VIEW_MODEL);
-		glUniformMatrix4fv(rInfo.vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-		glUniformMatrix4fv(rInfo.pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-		computeNormalMatrix3x3();
-		glUniformMatrix3fv(rInfo.normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-		// Render mesh
-		glBindVertexArray(board.vao);
-
-		glDrawElements(board.type, board.numIndexes, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-
-		popMatrix(MODEL);
-
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.ambient");
-		glUniform4fv(loc, 1, board.mat.ambient);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.diffuse");
-		glUniform4fv(loc, 1, board.mat.diffuse);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.specular");
-		glUniform4fv(loc, 1, board.mat.specular);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
-		glUniform1f(loc, board.mat.shininess);
-
-		pushMatrix(MODEL);
-		translate(MODEL, pos[0], pos[1], pos[2]);
-		rotate(MODEL, hAngle, 0.0f, 1.0f, 0.0f);
-		rotate(MODEL, vAngle, 1.0f, 0.0f, 0.0f);
-		translate(MODEL, -0.25f, 0.0f, 0.0f);
-		scale(MODEL, 0.1f, 0.2f, 1.0f);
-		translate(MODEL, -0.5f, 0.0f, -0.5f);
-
-		// send matrices to OGL
-		computeDerivedMatrix(PROJ_VIEW_MODEL);
-		glUniformMatrix4fv(rInfo.vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-		glUniformMatrix4fv(rInfo.pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-		computeNormalMatrix3x3();
-		glUniformMatrix3fv(rInfo.normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-		// Render mesh
-		glBindVertexArray(board.vao);
-
-		glDrawElements(board.type, board.numIndexes, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-
-		popMatrix(MODEL);
-
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.ambient");
-		glUniform4fv(loc, 1, board.mat.ambient);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.diffuse");
-		glUniform4fv(loc, 1, board.mat.diffuse);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.specular");
-		glUniform4fv(loc, 1, board.mat.specular);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
-		glUniform1f(loc, board.mat.shininess);
-
-		pushMatrix(MODEL);
-		translate(MODEL, pos[0], pos[1], pos[2]);
-		rotate(MODEL, hAngle, 0.0f, 1.0f, 0.0f);
-		rotate(MODEL, vAngle, 1.0f, 0.0f, 0.0f);
-		translate(MODEL, 0.0f, 0.3f, -0.45f);
-		scale(MODEL, 0.6f, 0.3f, 0.1f);
-		translate(MODEL, -0.5f, 0.0f, -0.5f);
-
-		// send matrices to OGL
-		computeDerivedMatrix(PROJ_VIEW_MODEL);
-		glUniformMatrix4fv(rInfo.vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-		glUniformMatrix4fv(rInfo.pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-		computeNormalMatrix3x3();
-		glUniformMatrix3fv(rInfo.normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-		// Render mesh
-		glBindVertexArray(board.vao);
-
-		glDrawElements(board.type, board.numIndexes, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-
-		popMatrix(MODEL);
-
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.ambient");
-		glUniform4fv(loc, 1, board.mat.ambient);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.diffuse");
-		glUniform4fv(loc, 1, board.mat.diffuse);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.specular");
-		glUniform4fv(loc, 1, board.mat.specular);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
-		glUniform1f(loc, board.mat.shininess);
-
-		pushMatrix(MODEL);
-		translate(MODEL, pos[0], pos[1], pos[2]);
-		rotate(MODEL, hAngle, 0.0f, 1.0f, 0.0f);
-		rotate(MODEL, vAngle, 1.0f, 0.0f, 0.0f);
-		translate(MODEL, 0.0f, 0.3f, 0.45f);
-		scale(MODEL, 0.6f, 0.2f, 0.1f);
-		translate(MODEL, -0.5f, 0.0f, -0.5f);
-
-		// send matrices to OGL
-		computeDerivedMatrix(PROJ_VIEW_MODEL);
-		glUniformMatrix4fv(rInfo.vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-		glUniformMatrix4fv(rInfo.pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-		computeNormalMatrix3x3();
-		glUniformMatrix3fv(rInfo.normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-		// Render mesh
-		glBindVertexArray(board.vao);
-
-		glDrawElements(board.type, board.numIndexes, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-
-		popMatrix(MODEL);
-
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.ambient");
-		glUniform4fv(loc, 1, board.mat.ambient);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.diffuse");
-		glUniform4fv(loc, 1, board.mat.diffuse);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.specular");
-		glUniform4fv(loc, 1, board.mat.specular);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
-		glUniform1f(loc, board.mat.shininess);
-
-		pushMatrix(MODEL);
-		translate(MODEL, pos[0], pos[1], pos[2]);
-		rotate(MODEL, hAngle, 0.0f, 1.0f, 0.0f);
-		rotate(MODEL, vAngle, 1.0f, 0.0f, 0.0f);
-		translate(MODEL, -0.25f, 0.3f, -0.2f);
-		scale(MODEL, 0.1f, 0.3f, 0.4f);
-		translate(MODEL, -0.5f, 0.0f, -0.5f);
-
-		// send matrices to OGL
-		computeDerivedMatrix(PROJ_VIEW_MODEL);
-		glUniformMatrix4fv(rInfo.vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-		glUniformMatrix4fv(rInfo.pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-		computeNormalMatrix3x3();
-		glUniformMatrix3fv(rInfo.normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-		// Render mesh
-		glBindVertexArray(board.vao);
-
-		glDrawElements(board.type, board.numIndexes, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-
-		popMatrix(MODEL);
-
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.ambient");
-		glUniform4fv(loc, 1, board.mat.ambient);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.diffuse");
-		glUniform4fv(loc, 1, board.mat.diffuse);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.specular");
-		glUniform4fv(loc, 1, board.mat.specular);
-		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
-		glUniform1f(loc, board.mat.shininess);
-
-		pushMatrix(MODEL);
-		translate(MODEL, pos[0], pos[1], pos[2]);
-		rotate(MODEL, hAngle, 0.0f, 1.0f, 0.0f);
-		rotate(MODEL, vAngle, 1.0f, 0.0f, 0.0f);
-		translate(MODEL, 0.25f, 0.3f, -0.2f);
-		scale(MODEL, 0.1f, 0.3f, 0.4f);
-		translate(MODEL, -0.5f, 0.0f, -0.5f);
-
-		// send matrices to OGL
-		computeDerivedMatrix(PROJ_VIEW_MODEL);
-		glUniformMatrix4fv(rInfo.vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-		glUniformMatrix4fv(rInfo.pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-		computeNormalMatrix3x3();
-		glUniformMatrix3fv(rInfo.normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-		// Render mesh
-		glBindVertexArray(board.vao);
-
-		glDrawElements(board.type, board.numIndexes, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-
+		rotate(MODEL, hAngle - 90, 0.0f, 1.0f, 0.0f);
+		rotate(MODEL, vAngle, 0.0, 0.0f, -1.0f);
+		scale(MODEL, scaleFactor, scaleFactor, scaleFactor);
+		aiRecursive_render(rInfo, scene, scene->mRootNode);
 		popMatrix(MODEL);
 	}
 };

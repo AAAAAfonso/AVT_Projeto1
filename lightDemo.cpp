@@ -74,7 +74,7 @@ VSShaderLib shaderText;  //render bitmap text
 const string font_name = "fonts/arial.ttf";
 
 //Vector with meshes
-vector<struct MyMesh> myMeshes;
+struct MyMesh rearViewModel;
 
 //External array storage defined in AVTmathLib.cpp
 
@@ -216,6 +216,41 @@ void changeSize(int w, int h) {
 	glViewport(0, 0, w, h);
 	// set the projection matrix
 	ratio = (1.0f * w) / h;
+	/* create a diamond shaped stencil area */
+	loadIdentity(PROJECTION);
+	if (w <= h)
+		ortho(-2.0, 2.0, -2.0 * (GLfloat)h / (GLfloat)w,
+			2.0 * (GLfloat)h / (GLfloat)w, -10, 10);
+	else
+		ortho(-2.0 * (GLfloat)w / (GLfloat)h,
+			2.0 * (GLfloat)w / (GLfloat)h, -2.0, 2.0, -10, 10);
+
+	// load identity matrices for Model-View
+	loadIdentity(VIEW);
+	loadIdentity(MODEL);
+
+	glUseProgram(shader.getProgramIndex());
+
+	//n�o vai ser preciso enviar o material pois o cubo n�o � desenhado
+
+	translate(MODEL, 0.8f, 0.8f, -0.5f);
+	scale(MODEL, 1.33f, 1.0f, 1.0f);
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	//glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	glClear(GL_STENCIL_BUFFER_BIT);
+
+	glStencilFunc(GL_NEVER, 0x1, 0x1);
+	glStencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
+
+	glBindVertexArray(rearViewModel.vao);
+	glDrawElements(rearViewModel.type, rearViewModel.numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
 	loadIdentity(PROJECTION);
 	perspective(53.13f, ratio, 0.1f, 1000.0f);
 }
@@ -225,6 +260,10 @@ void changeSize(int w, int h) {
 //
 // Render stufff
 //
+
+void renderRearView(void) {
+
+}
 
 void renderScene(void) {
 
@@ -289,6 +328,9 @@ void renderScene(void) {
 		glUniform1i(tex_loc1, 1);
 
 	struct render_info rInfo = {shader, vm_uniformId, pvm_uniformId, normal_uniformId, textured_uniformId};
+
+	// draw the tori where the stencil is not 1 
+	glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
 
 	terrain->render(rInfo);
 	sleigh->render(rInfo);
@@ -649,6 +691,19 @@ void init()
 	uInfo.lampposts = &lampposts;
 	uInfo.statue = statue;
 
+	// create geometry and VAO of the rearViewWindow
+	float amb[] = { 0.2f, 0.15f, 0.1f, 1.0f };
+	float diff[] = { 0.8f, 0.6f, 0.4f, 1.0f };
+	float spec[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+	float emissive[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	rearViewModel = createCube();
+	memcpy(rearViewModel.mat.ambient, amb, 4 * sizeof(float));
+	memcpy(rearViewModel.mat.diffuse, diff, 4 * sizeof(float));
+	memcpy(rearViewModel.mat.specular, spec, 4 * sizeof(float));
+	memcpy(rearViewModel.mat.emissive, emissive, 4 * sizeof(float));
+	rearViewModel.mat.shininess = 100.0f;
+	rearViewModel.mat.texCount = 0;
+
 	cams.push_back(Camera(0.0f, 20.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1, 0, 0, 0));
 	cams.push_back(Camera(0.0f, 20.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1, 0, 0, 1));
 	cams.push_back(Camera(-sleigh->get_direction()[0] * 5.0f, -sleigh->get_direction()[1] * 5.0f + 2.0f, -sleigh->get_direction()[2] * 5.0f, 
@@ -660,6 +715,9 @@ void init()
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_MULTISAMPLE);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+	glClearStencil(0x0);
+	glEnable(GL_STENCIL_TEST);
 
 }
 
@@ -673,7 +731,7 @@ int main(int argc, char **argv) {
 
 //  GLUT initialization
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DEPTH|GLUT_DOUBLE|GLUT_RGBA|GLUT_MULTISAMPLE);
+	glutInitDisplayMode(GLUT_DEPTH|GLUT_DOUBLE|GLUT_RGBA|GLUT_STENCIL|GLUT_MULTISAMPLE);
 
 	glutInitContextVersion (4, 3);
 	glutInitContextProfile (GLUT_CORE_PROFILE );

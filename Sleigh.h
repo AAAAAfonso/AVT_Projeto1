@@ -13,15 +13,16 @@ extern float mNormal3x3[9];
 std::string filepath = "./slitta_babbo/SLITTABABBO.obj";
 extern Assimp::Importer importer;
 extern const aiScene* scene;
-GLint normalMap_loc;
-GLint specularMap_loc;
-GLint diffMapCount_loc;
+
 extern float scaleFactor;
 
 
 
 class Sleigh {
 private:
+	GLint normalMap_loc;
+	GLint specularMap_loc;
+	GLint diffMapCount_loc;
 	std::vector<struct MyMesh> myMeshes;
 
 	float pos[4];

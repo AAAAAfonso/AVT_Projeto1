@@ -262,13 +262,79 @@ void changeSize(int w, int h) {
 //
 
 void renderRearView(void) {
+	// load identity matrices
+	loadIdentity(VIEW);
+	loadIdentity(MODEL);
+	// set the camera using a function similar to gluLookAt
+	loadIdentity(PROJECTION);
+	perspective(53.13f, ratio, 0.1f, 1000.0f);
+	float* p = sleigh->get_pos();
+	float *dir = sleigh->get_direction();
+	lookAt(p[0] - 0.5*dir[0], p[1] - 0.5*dir[1], p[2] - 0.5*dir[2],
+		p[0] - 2*dir[0], p[1] - 2*dir[1], p[2] - 2*dir[2],
+		cams[2].get_up(0), cams[2].get_up(1), cams[2].get_up(2));
 
+	// use our shader
+
+	glUseProgram(shader.getProgramIndex());
+
+	//send the light position in eye coordinates
+	//glUniform4fv(lPos_uniformId, 1, lightPos); //efeito capacete do mineiro, ou seja lighPos foi definido em eye coord 
+
+	float res[4];
+	multMatrixPoint(VIEW, dirLightPos, res);
+	glUniform4fv(dirLPos_uniformId, 1, res);
+	glUniform1i(dirLToggled_uniformId, dirLightToggled);
+
+	for (int i = 0; i < 6; i++) {
+		float* pos = lampposts[i].get_pointlight_pos();
+		multMatrixPoint(VIEW, pos, res);
+		delete[] pos;
+		glUniform4fv(pointLPos_uniformIds[i], 1, res);
+	}
+	glUniform1i(pointLToggled_uniformId, pointLightToggled);
+
+	for (int i = 0; i < 2; i++) {
+		float* pos = sleigh->get_spotlight_pos(i);
+		multMatrixPoint(VIEW, pos, res);
+		delete[] pos;
+		glUniform4fv(spotLPos_uniformIds[i], 1, res);
+	}
+	dir[3] = 0.0f;
+	multMatrixPoint(VIEW, dir, res);
+	glUniform4fv(spotLSpot_uniformId, 1, res);
+	glUniform1f(spotLThreshold_uniformId, cos(spotLightAngle * 3.14f / 180));
+	glUniform1i(spotLToggled_uniformId, spotLightToggled);
+
+	glUniform1i(fogToggled_uniformId, fogToggled);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
+	glUniform1i(tex_loc, 0);
+	glUniform1i(tex_loc1, 1);
+
+	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textured_uniformId };
+
+	// draw the tori where the stencil is not 1 
+	glStencilFunc(GL_EQUAL, 0x1, 0x1);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+	terrain->render(rInfo);
+	sleigh->render(rInfo);
+	for (int i = 0; i < 6; i++) lampposts[i].render(rInfo);
+	for (int i = 0; i < snowballs.size(); i++) snowballs[i].render(rInfo);
+	for (int i = 0; i < houses.size(); i++) houses[i].render(rInfo);
+	for (int i = 0; i < trees.size(); i++) trees[i].render(rInfo);
+	statue->render(rInfo);
 }
 
 void renderScene(void) {
-
 	FrameCount++;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	renderRearView();
 
 	// load identity matrices
 	loadIdentity(VIEW);

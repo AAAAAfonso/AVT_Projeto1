@@ -233,8 +233,8 @@ void changeSize(int w, int h) {
 
 	//n�o vai ser preciso enviar o material pois o cubo n�o � desenhado
 
-	translate(MODEL, 0.8f, 0.8f, -0.5f);
-	scale(MODEL, 1.33f, 1.0f, 1.0f);
+	translate(MODEL, -0.9f, 1.2f, -0.5f);
+	scale(MODEL, 1.8f, 0.6f, 1.0f);
 	// send matrices to OGL
 	computeDerivedMatrix(PROJ_VIEW_MODEL);
 	//glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);

@@ -33,6 +33,9 @@
     <ClCompile Include="avtFreeType.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="meshFromAssimp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AVTmathLib.h">
@@ -69,6 +72,24 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="update_info.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="meshFromAssimp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Tree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Statue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Snowball.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lamppost.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -168,14 +168,19 @@
   <ItemGroup>
     <ClInclude Include="avtFreeType.h" />
     <ClInclude Include="AVTmathLib.h" />
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="cube.h" />
     <ClInclude Include="ft2build.h" />
     <ClInclude Include="geometry.h" />
+    <ClInclude Include="Lamppost.h" />
     <ClInclude Include="meshFromAssimp.h" />
     <ClInclude Include="render_info.h" />
     <ClInclude Include="Sleigh.h" />
+    <ClInclude Include="Snowball.h" />
+    <ClInclude Include="Statue.h" />
     <ClInclude Include="Terrain.h" />
     <ClInclude Include="Texture_Loader.h" />
+    <ClInclude Include="Tree.h" />
     <ClInclude Include="update_info.h" />
     <ClInclude Include="VertexAttrDef.h" />
     <ClInclude Include="vsShaderLib.h" />

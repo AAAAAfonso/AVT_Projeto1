@@ -53,6 +53,7 @@
 #include "House.h"
 #include "Tree.h"
 #include "Statue.h"
+#include "Particle.h"
 
 
 
@@ -146,6 +147,7 @@ vector<SnowBall> snowballs;
 vector<House> houses;
 vector<Tree> trees;
 Statue* statue;
+vector<Particle> particles;
 
 
 bool paused = false;
@@ -194,6 +196,9 @@ void refresh(int value)
 		}
 		if (statue->getColided()) {
 			statue->updateStatue(1.0 / FPS);
+		}
+		for (int i = 0; i < particles.size(); i++) {
+			particles[i].update(1.0 / FPS);
 		}
 	}
 
@@ -327,6 +332,7 @@ void renderRearView(void) {
 	for (int i = 0; i < snowballs.size(); i++) snowballs[i].render(rInfo);
 	for (int i = 0; i < houses.size(); i++) houses[i].render(rInfo);
 	for (int i = 0; i < trees.size(); i++) trees[i].render(rInfo);
+	for (int i = 0; i < particles.size(); i++) particles[i].render(rInfo);
 	statue->render(rInfo);
 }
 
@@ -404,6 +410,7 @@ void renderScene(void) {
 	for (int i = 0; i < snowballs.size(); i++) snowballs[i].render(rInfo);
 	for (int i = 0; i < houses.size(); i++) houses[i].render(rInfo);
 	for (int i = 0; i < trees.size(); i++) trees[i].render(rInfo);
+	for (int i = 0; i < particles.size(); i++) particles[i].render(rInfo);
 	statue->render(rInfo);
 
 	//Render text (bitmap fonts) in screen coordinates. So use ortoghonal projection with viewport coordinates.
@@ -750,6 +757,12 @@ void init()
 		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 24 - 11.5f + (rand() % 10) * 0.1f - 0.5, rand() % 6 + 6.5f + (rand() % 10) * 0.1f - 0.5));
 	}
 	statue = new Statue(7.0f, 0.0f);
+	for (int i = 0; i < 400; i++) {
+		float x = rand() % 25 - 12.5f; float y = 8.0f + rand() % 2; float z = rand() % 25 - 12.5f;
+		float time = 5.0f + rand() % 10;
+		float rotation = rand() % 360;
+		particles.push_back(Particle(x, y, z, 0.0f, -1.0f, 0.0f, rotation, time));
+	}
 
 	uInfo.snowballs = &snowballs;
 	uInfo.houses = &houses;

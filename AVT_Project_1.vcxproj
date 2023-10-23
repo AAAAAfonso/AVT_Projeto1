@@ -127,7 +127,8 @@
       <AdditionalDependencies>freeglut.lib;glew32.lib;DevIL.lib;assimp.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>Dependencies.exe</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>xcopy /y /d  "$(ProjectDir)Dependencies\lib\$(Platform)\*.dll" "$(OutDir)"</Command>
@@ -174,6 +175,7 @@
     <ClInclude Include="geometry.h" />
     <ClInclude Include="Lamppost.h" />
     <ClInclude Include="meshFromAssimp.h" />
+    <ClInclude Include="Particle.h" />
     <ClInclude Include="render_info.h" />
     <ClInclude Include="Sleigh.h" />
     <ClInclude Include="Snowball.h" />

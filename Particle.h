@@ -23,7 +23,7 @@ private:
 		float shininess = 30.0f;
 		int texcount = 0;
 
-		mesh = createQuad(0.2f, 0.3f);
+		mesh = createQuad(0.1f, 0.3f);
 		memcpy(mesh.mat.ambient, amb, 4 * sizeof(float));
 		memcpy(mesh.mat.diffuse, diff, 4 * sizeof(float));
 		memcpy(mesh.mat.specular, spec, 4 * sizeof(float));
@@ -67,7 +67,7 @@ public:
 		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
 		glUniform1f(loc, mesh.mat.shininess);
 
-		glUniform1i(rInfo.textured_uniformId, true);
+		glUniform1i(rInfo.textMode_uniformId, 2);
 
 		pushMatrix(MODEL);
 		rotate(MODEL, rotation, 0.0f, 1.0f, 0.0f);

@@ -173,6 +173,7 @@
     <ClInclude Include="cube.h" />
     <ClInclude Include="ft2build.h" />
     <ClInclude Include="geometry.h" />
+    <ClInclude Include="House.h" />
     <ClInclude Include="Lamppost.h" />
     <ClInclude Include="meshFromAssimp.h" />
     <ClInclude Include="Particle.h" />

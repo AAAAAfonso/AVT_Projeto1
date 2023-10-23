@@ -109,8 +109,8 @@ GLint spotLToggled_uniformId;
 bool fogToggled = true;
 GLint fogToggled_uniformId;
 
-GLint textured_uniformId;
-GLuint TextureArray[2];
+GLint textMode_uniformId;
+GLuint TextureArray[3];
 
 // Mouse Tracking Variables
 int startX, startY, tracking = 0;
@@ -313,14 +313,17 @@ void renderRearView(void) {
 
 	glUniform1i(fogToggled_uniformId, fogToggled);
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
 	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
+	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
-	glUniform1i(tex_loc, 0);
-	glUniform1i(tex_loc1, 1);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, TextureArray[2]);
+	glUniform1i(tex_loc, 1);
+	glUniform1i(tex_loc1, 2);
+	glUniform1i(tex_loc2, 3);
 
-	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textured_uniformId };
+	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId };
 
 	// draw the tori where the stencil is not 1 
 	glStencilFunc(GL_EQUAL, 0x1, 0x1);
@@ -392,14 +395,17 @@ void renderScene(void) {
 
 		glUniform1i(fogToggled_uniformId, fogToggled);
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
 		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
+		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
-		glUniform1i(tex_loc, 0);
-		glUniform1i(tex_loc1, 1);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, TextureArray[2]);
+		glUniform1i(tex_loc, 1);
+		glUniform1i(tex_loc1, 2);
+		glUniform1i(tex_loc2, 3);
 
-	struct render_info rInfo = {shader, vm_uniformId, pvm_uniformId, normal_uniformId, textured_uniformId};
+	struct render_info rInfo = {shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId};
 
 	// draw the tori where the stencil is not 1 
 	glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
@@ -674,7 +680,8 @@ GLuint setupShaders() {
 	normal_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_normal");
 	tex_loc = glGetUniformLocation(shader.getProgramIndex(), "texmap");
 	tex_loc1 = glGetUniformLocation(shader.getProgramIndex(), "texmap1");
-	textured_uniformId = glGetUniformLocation(shader.getProgramIndex(), "textured");
+	tex_loc2 = glGetUniformLocation(shader.getProgramIndex(), "texmap2");
+	textMode_uniformId = glGetUniformLocation(shader.getProgramIndex(), "text_mode");
 
 	dirLPos_uniformId = glGetUniformLocation(shader.getProgramIndex(), "d_l_pos");
 	dirLToggled_uniformId = glGetUniformLocation(shader.getProgramIndex(), "dir_l_toggled");
@@ -732,9 +739,10 @@ void init()
 
 	//Texture Object definition
 
-	glGenTextures(2, TextureArray);
+	glGenTextures(3, TextureArray);
 	Texture2D_Loader(TextureArray, "texmap.jpg", 0);
 	Texture2D_Loader(TextureArray, "texmap1.jpg", 1);
+	Texture2D_Loader(TextureArray, "texmap2.png", 2);
 
 	/// Initialization of freetype library with font_name file
 	freeType_init(font_name);
@@ -757,11 +765,12 @@ void init()
 		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 24 - 11.5f + (rand() % 10) * 0.1f - 0.5, rand() % 6 + 6.5f + (rand() % 10) * 0.1f - 0.5));
 	}
 	statue = new Statue(7.0f, 0.0f);
-	for (int i = 0; i < 400; i++) {
-		float x = rand() % 25 - 12.5f; float y = 8.0f + rand() % 2; float z = rand() % 25 - 12.5f;
-		float time = 5.0f + rand() % 10;
+	for (int i = 0; i < 1000; i++) {
+		float x = (rand() % 250) / 10 - 12.5f; float y = 8.0f + (rand() % 50) / 10; float z = (rand() % 250) / 10 - 12.5f;
+		float s_y = -1.0f - (rand() % 10) / 10.0f; 
+		float time = 10.0f + (rand() % 50) / 10.0f;
 		float rotation = rand() % 360;
-		particles.push_back(Particle(x, y, z, 0.0f, -1.0f, 0.0f, rotation, time));
+		particles.push_back(Particle(x, y, z, 0.0f, s_y, 0.0f, rotation, time));
 	}
 
 	uInfo.snowballs = &snowballs;

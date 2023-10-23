@@ -81,7 +81,7 @@ public:
 		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
 		glUniform1f(loc, lamp.mat.shininess);
 
-		glUniform1i(rInfo.textured_uniformId, false);
+		glUniform1i(rInfo.textMode_uniformId, 0);
 
 		pushMatrix(MODEL);
 		translate(MODEL, x, 2.0f, z);

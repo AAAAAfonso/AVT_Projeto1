@@ -6,6 +6,7 @@
 #include "Snowball.h"
 #include "Lamppost.h"
 #include "Statue.h"
+#include "Present.h"
 
 
 struct keyboard_key_tracking {
@@ -25,6 +26,7 @@ struct update_info {
 	std::vector<SnowBall>* snowballs;
 	std::vector<Lamppost>* lampposts;
 	Statue* statue;
+	Present* present;
 };
 
 #endif

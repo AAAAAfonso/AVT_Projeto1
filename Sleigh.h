@@ -31,6 +31,7 @@ private:
 	float vAngle = 0.0f;
 	float speed = 0.0f;
 	int lives = 5;
+	int points = 0;
 
 	MyMesh board;
 
@@ -80,15 +81,20 @@ public:
 
 	void decrease_lives() {
 		lives--;
-		if (lives == 0) reset_lives();
+		if (lives == 0) reset();
 	}
 
-	void reset_lives() {
+	void reset() {
+		points = 0;
 		lives = 5;
 	}
 
 	int get_lives() {
 		return lives;
+	}
+
+	int get_points() {
+		return points;
 	}
 
 	bool detectColisionAABBbox(struct update_info* uInfo) {
@@ -138,8 +144,19 @@ public:
 				col_detected = true;
 			}
 		}
+		if (uInfo->present->aabb_min[0] <= this->aabb_max[0] &&
+			uInfo->present->aabb_max[0] >= this->aabb_min[0] &&
+			uInfo->present->aabb_min[1] <= this->aabb_max[1] &&
+			uInfo->present->aabb_max[1] >= this->aabb_min[1] &&
+			uInfo->present->aabb_min[2] <= this->aabb_max[2] &&
+			uInfo->present->aabb_max[2] >= this->aabb_min[2]) {
+			uInfo->present->setColided();
+			points++;
+		}
+
 		return col_detected;
 	}
+
 	void updateAABB() {
 
 		//float angle_0 = 0.5 * cos(0);

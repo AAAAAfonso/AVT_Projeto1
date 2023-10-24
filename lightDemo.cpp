@@ -54,6 +54,7 @@
 #include "Tree.h"
 #include "Statue.h"
 #include "Particle.h"
+#include "Present.h"
 
 
 
@@ -93,7 +94,7 @@ char model_dir[50];
 GLint pvm_uniformId;
 GLint vm_uniformId;
 GLint normal_uniformId;
-GLint tex_loc, tex_loc1, tex_loc2;
+GLint tex_loc, tex_loc1, tex_loc2, tex_loc3;
 
 GLint dirLPos_uniformId;
 GLint dirLToggled_uniformId;
@@ -110,7 +111,7 @@ bool fogToggled = true;
 GLint fogToggled_uniformId;
 
 GLint textMode_uniformId;
-GLuint TextureArray[3];
+GLuint TextureArray[4];
 
 // Mouse Tracking Variables
 int startX, startY, tracking = 0;
@@ -148,6 +149,7 @@ vector<House> houses;
 vector<Tree> trees;
 Statue* statue;
 vector<Particle> particles;
+Present* present;
 
 
 bool paused = false;
@@ -199,6 +201,11 @@ void refresh(int value)
 		}
 		for (int i = 0; i < particles.size(); i++) {
 			particles[i].update(1.0 / FPS);
+		}
+		if (present->getColided()) {
+			delete present;
+			present = new Present((rand() % 240) / 10 - 12.0f, (rand() % 240) / 10 - 12.0f);
+			uInfo.present = present;
 		}
 	}
 
@@ -336,6 +343,7 @@ void renderRearView(void) {
 	for (int i = 0; i < houses.size(); i++) houses[i].render(rInfo);
 	for (int i = 0; i < trees.size(); i++) trees[i].render(rInfo);
 	for (int i = 0; i < particles.size(); i++) particles[i].render(rInfo);
+	present->render(rInfo);
 	statue->render(rInfo);
 }
 
@@ -401,9 +409,12 @@ void renderScene(void) {
 		glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
 		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, TextureArray[2]);
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, TextureArray[3]);
 		glUniform1i(tex_loc, 1);
 		glUniform1i(tex_loc1, 2);
 		glUniform1i(tex_loc2, 3);
+		glUniform1i(tex_loc3, 4);
 
 	struct render_info rInfo = {shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId};
 
@@ -417,6 +428,7 @@ void renderScene(void) {
 	for (int i = 0; i < houses.size(); i++) houses[i].render(rInfo);
 	for (int i = 0; i < trees.size(); i++) trees[i].render(rInfo);
 	for (int i = 0; i < particles.size(); i++) particles[i].render(rInfo);
+	present->render(rInfo);
 	statue->render(rInfo);
 
 	//Render text (bitmap fonts) in screen coordinates. So use ortoghonal projection with viewport coordinates.
@@ -438,6 +450,8 @@ void renderScene(void) {
 	//	RenderText(shaderText, "PAUSED", m_viewport[2] / 2.0f - 100.0f, m_viewport[3] / 2.0f + 25.0f, 1.0f, 1.0f, 1.0f, 1.01f);
 	//RenderText(shaderText, "LIVES: ", 25.0f, m_viewport[3] - 50.0f, 1.0f, 0.5f, 0.8f, 0.2f);
 	//RenderText(shaderText, to_string(sleigh->get_lives()), 180.0f, m_viewport[3] - 50.0f, 1.0f, 0.5f, 0.8f, 0.2f);
+	//RenderText(shaderText, "POINTS: ", 25.0f, m_viewport[3] - 90.0f, 1.0f, 0.5f, 0.8f, 0.2f);
+	//RenderText(shaderText, to_string(sleigh->get_points()), 210.0f, m_viewport[3] - 90.0f, 1.0f, 0.5f, 0.8f, 0.2f);
 	popMatrix(PROJECTION);
 	popMatrix(VIEW);
 	popMatrix(MODEL);
@@ -550,7 +564,7 @@ void processKeysUp(unsigned char key, int xx, int yy)
 		break;
 	case 'r':
 		sleigh->missionFail();
-		sleigh->reset_lives();
+		sleigh->reset();
 		break;
 
 	case 27:
@@ -681,6 +695,7 @@ GLuint setupShaders() {
 	tex_loc = glGetUniformLocation(shader.getProgramIndex(), "texmap");
 	tex_loc1 = glGetUniformLocation(shader.getProgramIndex(), "texmap1");
 	tex_loc2 = glGetUniformLocation(shader.getProgramIndex(), "texmap2");
+	tex_loc3 = glGetUniformLocation(shader.getProgramIndex(), "texmap3");
 	textMode_uniformId = glGetUniformLocation(shader.getProgramIndex(), "text_mode");
 
 	dirLPos_uniformId = glGetUniformLocation(shader.getProgramIndex(), "d_l_pos");
@@ -743,6 +758,7 @@ void init()
 	Texture2D_Loader(TextureArray, "texmap.jpg", 0);
 	Texture2D_Loader(TextureArray, "texmap1.jpg", 1);
 	Texture2D_Loader(TextureArray, "texmap2.png", 2);
+	Texture2D_Loader(TextureArray, "texmap3.png", 3);
 
 	/// Initialization of freetype library with font_name file
 	freeType_init(font_name);
@@ -772,12 +788,14 @@ void init()
 		float rotation = rand() % 360;
 		particles.push_back(Particle(x, y, z, 0.0f, s_y, 0.0f, rotation, time));
 	}
+	present = new Present((rand() % 240) / 10 - 12.0f, (rand() % 240) / 10 - 12.0f);
 
 	uInfo.snowballs = &snowballs;
 	uInfo.houses = &houses;
 	uInfo.trees = &trees;
 	uInfo.lampposts = &lampposts;
 	uInfo.statue = statue;
+	uInfo.present = present;
 
 	// create geometry and VAO of the rearViewWindow
 	float amb[] = { 0.2f, 0.15f, 0.1f, 1.0f };

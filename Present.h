@@ -6,25 +6,23 @@
 extern float mCompMatrix[COUNT_COMPUTED_MATRICES][16];
 extern float mNormal3x3[9];
 
-class Particle {
+class Present {
 private:
-	float start[4];
-	float pos[4];
-	float speed[4];
-	float rotation;
-	float time;
-	float time_passed = 0.0f;
+	float x, z;
+
+	bool colided = false;
+
 	MyMesh mesh;
 
 	void createMesh() {
-		float amb[4] = { 0.2f, 0.2f, 0.21f, 1.0f };
-		float diff[4] = { 0.4f, 0.4f, 0.42f, 1.0f };
-		float spec[4] = { 0.3f, 0.3f, 0.3f, 1.0f };
+		float amb[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
+		float diff[4] = { 0.3f, 0.3f, 0.3f, 1.0f };
+		float spec[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 		float emissive[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		float shininess = 30.0f;
+		float shininess = 100.0f;
 		int texcount = 0;
 
-		mesh = createQuad(0.15f, 0.15f);
+		mesh = createCube();
 		memcpy(mesh.mat.ambient, amb, 4 * sizeof(float));
 		memcpy(mesh.mat.diffuse, diff, 4 * sizeof(float));
 		memcpy(mesh.mat.specular, spec, 4 * sizeof(float));
@@ -34,28 +32,17 @@ private:
 	}
 
 public:
-	Particle(float x, float y, float z, float s_x, float s_y, float s_z, float rotation, float time) {
-		pos[0] = start[0] = x, pos[1] = start[1] = y, pos[2] = start[2] = z, pos[3] = start[3] = 1;
-		speed[0] = s_x, speed[1] = s_y, speed[2] = s_z; speed[3] = 0;
-		this->rotation = rotation;
-		this->time = time;
+	float aabb_max[4];
+	float aabb_min[4];
+
+	Present(float x, float z) {
+
+		this->x = x; this->z = z;
+
+		aabb_max[0] = this->x + 0.25f; aabb_max[1] = 0.5f; aabb_max[2] = this->z + 0.25f;
+		aabb_min[0] = this->x - 0.25f; aabb_min[1] = 0.0f; aabb_min[2] = this->z - 0.25f;
 
 		createMesh();
-	}
-
-	void update(float deltatime) {
-		pos[0] += speed[0] * deltatime;
-		pos[1] += speed[1] * deltatime;
-		pos[2] += speed[2] * deltatime;
-
-		if (time_passed < this->time && pos[1] > 0) {
-			time_passed += deltatime;
-		}
-		else if (time_passed >= this->time) {
-			time_passed = 0.0f;
-			for (int i = 0; i < 4; i++) pos[i] = start[i];
-		} else if (pos[1] <= 0)
-			for (int i = 0; i < 4; i++) pos[i] = start[i];
 	}
 
 	void render(struct render_info rInfo) {
@@ -68,11 +55,11 @@ public:
 		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
 		glUniform1f(loc, mesh.mat.shininess);
 
-		glUniform1i(rInfo.textMode_uniformId, 2);
+		glUniform1i(rInfo.textMode_uniformId, 3);
 
 		pushMatrix(MODEL);
-		rotate(MODEL, rotation, 0.0f, 1.0f, 0.0f);
-		translate(MODEL, pos[0], pos[1], pos[2]);
+		translate(MODEL, this->x - 0.25f, 0.0f, this->z - 0.25f);
+		scale(MODEL, 0.5f, 0.5f, 0.5f);
 
 		// send matrices to OGL
 		computeDerivedMatrix(PROJ_VIEW_MODEL);
@@ -88,5 +75,14 @@ public:
 		glBindVertexArray(0);
 
 		popMatrix(MODEL);
+	}
+
+
+	bool getColided() {
+		return this->colided;
+	}
+
+	void setColided() {
+		this->colided = true;
 	}
 };

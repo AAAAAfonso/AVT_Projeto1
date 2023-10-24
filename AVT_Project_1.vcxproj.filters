@@ -98,6 +98,9 @@
     <ClInclude Include="House.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Present.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\pointlight.frag">

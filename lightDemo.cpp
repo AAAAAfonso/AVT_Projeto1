@@ -204,7 +204,7 @@ void refresh(int value)
 		}
 		if (present->getColided()) {
 			delete present;
-			present = new Present((rand() % 240) / 10 - 12.0f, (rand() % 240) / 10 - 12.0f);
+			present = new Present((rand() % 200) / 10 - 10.0f, (rand() % 200) / 10 - 10.0f);
 			uInfo.present = present;
 		}
 	}
@@ -789,7 +789,7 @@ void init()
 		float rotation = rand() % 360;
 		particles.push_back(Particle(x, y, z, 0.0f, s_y, 0.0f, rotation, time));
 	}
-	present = new Present((rand() % 240) / 10 - 12.0f, (rand() % 240) / 10 - 12.0f);
+	present = new Present((rand() % 200) / 10 - 10.0f, (rand() % 200) / 10 - 10.0f);
 
 	uInfo.snowballs = &snowballs;
 	uInfo.houses = &houses;

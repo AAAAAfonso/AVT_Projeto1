@@ -8,7 +8,7 @@
 // The code comes with no warranties, use it at your own risk.
 // You may use it, or parts of it, wherever you want.
 // 
-// Author: Jo�o Madeiras Pereira
+// Author: Joï¿½o Madeiras Pereira
 //
 
 #include <math.h>
@@ -35,6 +35,7 @@
 #include "AVTmathLib.h"
 #include "VertexAttrDef.h"
 #include "geometry.h"
+#include "flare.h"
 
 #include "avtFreeType.h"
 
@@ -72,9 +73,11 @@ VSShaderLib shaderText;  //render bitmap text
 
 //File with the font
 const string font_name = "fonts/arial.ttf";
+bool renderFlare = true;
 
 //Vector with meshes
 vector<struct MyMesh> myMeshes;
+MyMesh FlareMesh;
 
 //External array storage defined in AVTmathLib.cpp
 
@@ -118,10 +121,15 @@ int startX, startY, tracking = 0;
 float alpha = 39.0f, beta = 51.0f;
 float r = 15.0f;
 
+//Flare effect
+FLARE_DEF AVTflare;
+float lightScreenPos[3];  //Position of the light in Window Coordinates
+GLuint FlareTextureArray[5];
+
 // Frame counting and FPS computation
-long myTime,timebase = 0,frame = 0;
+long myTime, timebase = 0, frame = 0;
 char s[32];
-float dirLightPos[4] = {1.0f, -0.5f, 0.0f, 0.0f};
+float dirLightPos[4] = { 1.0f, -0.5f, 0.0f, 0.0f };
 
 bool dirLightToggled = true;
 bool pointLightToggled = true;
@@ -135,7 +143,7 @@ short active_camera = 0;
 float ratio = WinX / WinY;
 
 struct update_info uInfo = { 0.0f, 0.0f, 0.0f };
-struct keyboard_key_tracking uTrack = { false, false, false, false, false};
+struct keyboard_key_tracking uTrack = { false, false, false, false, false };
 
 
 // Create objects
@@ -148,7 +156,18 @@ vector<Tree> trees;
 Statue* statue;
 
 
+inline double clamp(const double x, const double min, const double max) {
+	return (x < min ? min : (x > max ? max : x));
+}
+
+inline int clampi(const int x, const int min, const int max) {
+	return (x < min ? min : (x > max ? max : x));
+}
+
+
 bool paused = false;
+
+
 
 
 void timer(int value)
@@ -158,8 +177,8 @@ void timer(int value)
 	std::string s = oss.str();
 	glutSetWindow(WindowHandle);
 	glutSetWindowTitle(s.c_str());
-    FrameCount = 0;
-    glutTimerFunc(1000, timer, 0);
+	FrameCount = 0;
+	glutTimerFunc(1000, timer, 0);
 }
 
 void updateGameSpeed(int value) {
@@ -210,7 +229,7 @@ void refresh(int value)
 void changeSize(int w, int h) {
 
 	// Prevent a divide by zero, when window is too short
-	if(h == 0)
+	if (h == 0)
 		h = 1;
 	// set the viewport to be the entire window
 	glViewport(0, 0, w, h);
@@ -225,6 +244,92 @@ void changeSize(int w, int h) {
 //
 // Render stufff
 //
+
+void render_flare(FLARE_DEF* flare, int lx, int ly, int* m_viewport) {  //lx, ly represent the projected position of light on viewport
+
+	int     dx, dy;          // Screen coordinates of "destination"
+	int     px, py;          // Screen coordinates of flare element
+	int		cx, cy;
+	float    maxflaredist, flaredist, flaremaxsize, flarescale, scaleDistance;
+	int     width, height, alpha;    // Piece parameters;
+	int     i;
+	float	diffuse[4];
+
+	GLint loc;
+
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	int screenMaxCoordX = m_viewport[0] + m_viewport[2] - 1;
+	int screenMaxCoordY = m_viewport[1] + m_viewport[3] - 1;
+
+	//viewport center
+	cx = m_viewport[0] + (int)(0.5f * (float)m_viewport[2]) - 1;
+	cy = m_viewport[1] + (int)(0.5f * (float)m_viewport[3]) - 1;
+
+	// Compute how far off-center the flare source is.
+	maxflaredist = sqrt(cx * cx + cy * cy);
+	flaredist = sqrt((lx - cx) * (lx - cx) + (ly - cy) * (ly - cy));
+	scaleDistance = (maxflaredist - flaredist) / maxflaredist;
+	flaremaxsize = (int)(m_viewport[2] * flare->fMaxSize);
+	flarescale = (int)(m_viewport[2] * flare->fScale);
+
+	// Destination is opposite side of centre from source
+	dx = clampi(cx + (cx - lx), m_viewport[0], screenMaxCoordX);
+	dy = clampi(cy + (cy - ly), m_viewport[1], screenMaxCoordY);
+
+	// Render each element. To be used Texture Unit 0
+
+	glUniform1i(textured_uniformId, 3); // draw modulated textured particles
+	glUniform1i(tex_loc, 0);  //use TU 0
+
+	for (i = 0; i < flare->nPieces; ++i)
+	{
+		// Position is interpolated along line between start and destination.
+		px = (int)((1.0f - flare->element[i].fDistance) * lx + flare->element[i].fDistance * dx);
+		py = (int)((1.0f - flare->element[i].fDistance) * ly + flare->element[i].fDistance * dy);
+		px = clampi(px, m_viewport[0], screenMaxCoordX);
+		py = clampi(py, m_viewport[1], screenMaxCoordY);
+
+		// Piece size are 0 to 1; flare size is proportion of screen width; scale by flaredist/maxflaredist.
+		width = (int)(scaleDistance * flarescale * flare->element[i].fSize);
+
+		// Width gets clamped, to allows the off-axis flaresto keep a good size without letting the elements get big when centered.
+		if (width > flaremaxsize)  width = flaremaxsize;
+
+		height = (int)((float)m_viewport[3] / (float)m_viewport[2] * (float)width);
+		memcpy(diffuse, flare->element[i].matDiffuse, 4 * sizeof(float));
+		diffuse[3] *= scaleDistance;   //scale the alpha channel
+
+		if (width > 1)
+		{
+			// send the material - diffuse color modulated with texture
+			loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+			glUniform4fv(loc, 1, diffuse);
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, FlareTextureArray[flare->element[i].textureId]);
+			pushMatrix(MODEL);
+			translate(MODEL, (float)(px - width * 0.0f), (float)(py - height * 0.0f), 0.0f);
+			scale(MODEL, (float)width, (float)height, 1);
+			computeDerivedMatrix(PROJ_VIEW_MODEL);
+			glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+			glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+			computeNormalMatrix3x3();
+			glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+			glBindVertexArray(FlareMesh.vao);
+			glDrawElements(FlareMesh.type, FlareMesh.numIndexes, GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
+			popMatrix(MODEL);
+		}
+	}
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glDisable(GL_BLEND);
+}
 
 void renderScene(void) {
 
@@ -247,52 +352,52 @@ void renderScene(void) {
 		cams[active_camera].get_up(0), cams[active_camera].get_up(1), cams[active_camera].get_up(2));
 
 	// use our shader
-	
+
 	glUseProgram(shader.getProgramIndex());
 
-		//send the light position in eye coordinates
-		//glUniform4fv(lPos_uniformId, 1, lightPos); //efeito capacete do mineiro, ou seja lighPos foi definido em eye coord 
+	//send the light position in eye coordinates
+	//glUniform4fv(lPos_uniformId, 1, lightPos); //efeito capacete do mineiro, ou seja lighPos foi definido em eye coord 
 
-		float res[4];
-		multMatrixPoint(VIEW, dirLightPos, res);
-		glUniform4fv(dirLPos_uniformId, 1, res);
-		glUniform1i(dirLToggled_uniformId, dirLightToggled);
+	float res[4];
+	multMatrixPoint(VIEW, dirLightPos, res);
+	glUniform4fv(dirLPos_uniformId, 1, res);
+	glUniform1i(dirLToggled_uniformId, dirLightToggled);
 
-		for (int i = 0; i < 6; i++) {
-			float *pos = lampposts[i].get_pointlight_pos();
-			multMatrixPoint(VIEW, pos, res);
-			delete[] pos;
-			glUniform4fv(pointLPos_uniformIds[i], 1, res);
-		}
-		glUniform1i(pointLToggled_uniformId, pointLightToggled);
+	for (int i = 0; i < lampposts.size(); i++) {
+		float* pos = lampposts[i].get_pointlight_pos();
+		multMatrixPoint(VIEW, pos, res);
+		delete[] pos;
+		glUniform4fv(pointLPos_uniformIds[i], 1, res);
+	}
+	glUniform1i(pointLToggled_uniformId, pointLightToggled);
 
-		for (int i = 0; i < 2; i++) {
-			float* pos = sleigh->get_spotlight_pos(i);
-			multMatrixPoint(VIEW, pos, res);
-			delete[] pos;
-			glUniform4fv(spotLPos_uniformIds[i], 1, res);
-		}
-		float* dir = sleigh->get_direction();
-		dir[3] = 0.0f;
-		multMatrixPoint(VIEW, dir, res);
-		glUniform4fv(spotLSpot_uniformId, 1, res);
-		glUniform1f(spotLThreshold_uniformId, cos(spotLightAngle * 3.14f / 180));
-		glUniform1i(spotLToggled_uniformId, spotLightToggled);
+	for (int i = 0; i < 2; i++) {
+		float* pos = sleigh->get_spotlight_pos(i);
+		multMatrixPoint(VIEW, pos, res);
+		delete[] pos;
+		glUniform4fv(spotLPos_uniformIds[i], 1, res);
+	}
+	float* dir = sleigh->get_direction();
+	dir[3] = 0.0f;
+	multMatrixPoint(VIEW, dir, res);
+	glUniform4fv(spotLSpot_uniformId, 1, res);
+	glUniform1f(spotLThreshold_uniformId, cos(spotLightAngle * 3.14f / 180));
+	glUniform1i(spotLToggled_uniformId, spotLightToggled);
 
-		glUniform1i(fogToggled_uniformId, fogToggled);
+	glUniform1i(fogToggled_uniformId, fogToggled);
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
-		glUniform1i(tex_loc, 0);
-		glUniform1i(tex_loc1, 1);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
+	glUniform1i(tex_loc, 0);
+	glUniform1i(tex_loc1, 1);
 
-	struct render_info rInfo = {shader, vm_uniformId, pvm_uniformId, normal_uniformId, textured_uniformId};
+	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textured_uniformId };
 
 	terrain->render(rInfo);
 	sleigh->render(rInfo);
-	for (int i = 0; i < 6; i++) lampposts[i].render(rInfo);
+	for (int i = 0; i < lampposts.size(); i++) lampposts[i].render(rInfo);
 	for (int i = 0; i < snowballs.size(); i++) snowballs[i].render(rInfo);
 	for (int i = 0; i < houses.size(); i++) houses[i].render(rInfo);
 	for (int i = 0; i < trees.size(); i++) trees[i].render(rInfo);
@@ -302,8 +407,22 @@ void renderScene(void) {
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	int flarePos[2];
 	int m_viewport[4];
 	glGetIntegerv(GL_VIEWPORT, m_viewport);
+
+	pushMatrix(MODEL);
+	loadIdentity(MODEL);
+	computeDerivedMatrix(PROJ_VIEW_MODEL);  //pvm to be applied to lightPost. pvm is used in project function
+
+	float* pos = lampposts[0].get_pointlight_pos();
+	if (!project(pos, lightScreenPos, m_viewport))
+		printf("Error in getting projected light in screen\n");  //Calculate the window Coordinates of the light position: the projected position of light on viewport
+	flarePos[0] = clampi((int)lightScreenPos[0], m_viewport[0], m_viewport[0] + m_viewport[2] - 1);
+	flarePos[1] = clampi((int)lightScreenPos[1], m_viewport[1], m_viewport[1] + m_viewport[3] - 1);
+	
+	popMatrix(MODEL);
+
 
 	//viewer at origin looking down at  negative z direction
 	pushMatrix(MODEL);
@@ -313,8 +432,10 @@ void renderScene(void) {
 	pushMatrix(VIEW);
 	loadIdentity(VIEW);
 	ortho(m_viewport[0], m_viewport[0] + m_viewport[2] - 1, m_viewport[1], m_viewport[1] + m_viewport[3] - 1, -1, 1);
-	//if (paused)
-	//	RenderText(shaderText, "PAUSED", m_viewport[2] / 2.0f - 100.0f, m_viewport[3] / 2.0f + 25.0f, 1.0f, 1.0f, 1.0f, 1.01f);
+	//if(renderFlare)
+		//render_flare(&AVTflare, flarePos[0], flarePos[1], m_viewport);
+	if (paused)
+		RenderText(shaderText, "PAUSED", m_viewport[2] / 2.0f - 100.0f, m_viewport[3] / 2.0f + 25.0f, 1.0f, 1.0f, 1.0f, 1.01f);
 	//RenderText(shaderText, "LIVES: ", 25.0f, m_viewport[3] - 50.0f, 1.0f, 0.5f, 0.8f, 0.2f);
 	//RenderText(shaderText, to_string(sleigh->get_lives()), 180.0f, m_viewport[3] - 50.0f, 1.0f, 0.5f, 0.8f, 0.2f);
 	popMatrix(PROJECTION);
@@ -333,61 +454,62 @@ void renderScene(void) {
 
 void processKeysDown(unsigned char key, int xx, int yy)
 {
-	switch(key) {
-		case 'w':
-			if(uTrack.w_key == false)
-				uInfo.v_turning += -1;
-			uTrack.w_key = true;
-			break;
-		case 'a':
-			if (uTrack.a_key == false)
-				uInfo.h_turning += 1;
-			uTrack.a_key = true;
-			break;
-		case 's':
-			if (uTrack.s_key == false)
+	switch (key) {
+	case 'w':
+		if (uTrack.w_key == false)
+			uInfo.v_turning += -1;
+		uTrack.w_key = true;
+		break;
+	case 'a':
+		if (uTrack.a_key == false)
+			uInfo.h_turning += 1;
+		uTrack.a_key = true;
+		break;
+	case 's':
+		if (uTrack.s_key == false)
 
-				uInfo.v_turning += 1;
-			uTrack.s_key = true;
+			uInfo.v_turning += 1;
+		uTrack.s_key = true;
 
-			break;
-		case 'd':
-			if (uTrack.d_key == false)
-				uInfo.h_turning += -1;
-			uTrack.d_key = true;
-			break;
-		case 'o':
-			if (uTrack.o_key == false)
-				uInfo.accelerating = 1;
-			uTrack.o_key = true;
-			break;
+		break;
+	case 'd':
+		if (uTrack.d_key == false)
+			uInfo.h_turning += -1;
+		uTrack.d_key = true;
+		break;
+	case 'o':
+		if (uTrack.o_key == false)
+			uInfo.accelerating = 1;
+		uTrack.o_key = true;
+		break;
 
-		case '1':
-			active_camera = 0;
-			break;
-		case '2':
-			active_camera = 1;
-			break;
-		case '3':
-			active_camera = 2;
-			break;
-		
-		case 'n':
-			dirLightToggled = !dirLightToggled;
-			break;
-		case 'c':
-			pointLightToggled = !pointLightToggled;
-			break;
-		case 'h':
-			spotLightToggled = !spotLightToggled;
-			break;
-		case 'f':
-			fogToggled = !fogToggled;
-			break;
+	case '1':
+		active_camera = 0;
+		break;
+	case '2':
+		active_camera = 1;
+		break;
+	case '3':
+		active_camera = 2;
+		break;
 
-		case 27:
-			glutLeaveMainLoop();
-			break;
+	case 'n':
+		dirLightToggled = !dirLightToggled;
+		break;
+	case 'c':
+		pointLightToggled = !pointLightToggled;
+		break;
+	case 'h':
+		spotLightToggled = !spotLightToggled;
+		break;
+	case 'f':
+		fogToggled = !fogToggled;
+		break;
+	case 'l':
+		renderFlare = !renderFlare;
+	case 27:
+		glutLeaveMainLoop();
+		break;
 
 		//case 'c': 
 		//	printf("Camera Spherical Coordinates (%f, %f, %f)\n", alpha, beta, r);
@@ -446,7 +568,7 @@ void processKeysUp(unsigned char key, int xx, int yy)
 void processMouseButtons(int button, int state, int xx, int yy)
 {
 	// start tracking the mouse
-	if (state == GLUT_DOWN)  {
+	if (state == GLUT_DOWN) {
 		startX = xx;
 		startY = yy;
 		if (button == GLUT_LEFT_BUTTON)
@@ -479,8 +601,8 @@ void processMouseMotion(int xx, int yy)
 	float alphaAux, betaAux;
 	float rAux;
 
-	deltaX =  - xx + startX;
-	deltaY =    yy - startY;
+	deltaX = -xx + startX;
+	deltaY = yy - startY;
 
 	// left mouse button: move camera
 	if (tracking == 1) {
@@ -507,9 +629,9 @@ void processMouseMotion(int xx, int yy)
 
 	cams[2].set_pos(0, rAux * sin(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f) + sleigh->get_pos()[0]);
 	cams[2].set_pos(2, rAux * cos(alphaAux * 3.14f / 180.0f) * cos(betaAux * 3.14f / 180.0f) + sleigh->get_pos()[2]);
-	cams[2].set_pos(1, rAux *   						       sin(betaAux * 3.14f / 180.0f) + sleigh->get_pos()[1]);
-//  uncomment this if not using an idle or refresh func
-//	glutPostRedisplay();
+	cams[2].set_pos(1, rAux * sin(betaAux * 3.14f / 180.0f) + sleigh->get_pos()[1]);
+	//  uncomment this if not using an idle or refresh func
+	//	glutPostRedisplay();
 }
 
 
@@ -521,10 +643,10 @@ void mouseWheel(int wheel, int direction, int x, int y) {
 
 	cams[2].set_pos(0, r * sin(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f));
 	cams[2].set_pos(2, r * cos(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f));
-	cams[2].set_pos(1, r *   						     sin(beta * 3.14f / 180.0f));
+	cams[2].set_pos(1, r * sin(beta * 3.14f / 180.0f));
 
-//  uncomment this if not using an idle or refresh func
-//	glutPostRedisplay();
+	//  uncomment this if not using an idle or refresh func
+	//	glutPostRedisplay();
 }
 
 // --------------------------------------------------------
@@ -541,7 +663,7 @@ GLuint setupShaders() {
 	shader.loadShader(VSShaderLib::FRAGMENT_SHADER, "shaders/pointlight.frag");
 
 	// set semantics for the shader variables
-	glBindFragDataLocation(shader.getProgramIndex(), 0,"colorOut");
+	glBindFragDataLocation(shader.getProgramIndex(), 0, "colorOut");
 	glBindAttribLocation(shader.getProgramIndex(), VERTEX_COORD_ATTRIB, "position");
 	glBindAttribLocation(shader.getProgramIndex(), NORMAL_ATTRIB, "normal");
 	//glBindAttribLocation(shader.getProgramIndex(), TEXTURE_COORD_ATTRIB, "texCoord");
@@ -574,12 +696,12 @@ GLuint setupShaders() {
 
 	spotLPos_uniformIds.push_back(glGetUniformLocation(shader.getProgramIndex(), "s_l_pos0"));
 	spotLPos_uniformIds.push_back(glGetUniformLocation(shader.getProgramIndex(), "s_l_pos1"));
-	spotLSpot_uniformId =glGetUniformLocation(shader.getProgramIndex(), "s_l_spot");
+	spotLSpot_uniformId = glGetUniformLocation(shader.getProgramIndex(), "s_l_spot");
 	spotLThreshold_uniformId = glGetUniformLocation(shader.getProgramIndex(), "spot_l_threshold");
 	spotLToggled_uniformId = glGetUniformLocation(shader.getProgramIndex(), "spot_l_toggled");
 
 	fogToggled_uniformId = glGetUniformLocation(shader.getProgramIndex(), "fog_toggled");
-	
+
 	printf("InfoLog for Per Fragment Phong Lightning Shader\n%s\n\n", shader.getAllInfoLogs().c_str());
 
 	// Shader for bitmap Text
@@ -594,7 +716,7 @@ GLuint setupShaders() {
 		printf("GLSL Text Program Not Valid!\n");
 		exit(1);
 	}
-	
+
 	return(shader.isProgramLinked() && shaderText.isProgramLinked());
 }
 
@@ -621,6 +743,14 @@ void init()
 	Texture2D_Loader(TextureArray, "texmap.jpg", 0);
 	Texture2D_Loader(TextureArray, "texmap1.jpg", 1);
 
+	//Flare elements textures
+	glGenTextures(5, FlareTextureArray);
+	Texture2D_Loader(FlareTextureArray, "crcl.tga", 0);
+	Texture2D_Loader(FlareTextureArray, "flar.tga", 1);
+	Texture2D_Loader(FlareTextureArray, "hxgn.tga", 2);
+	Texture2D_Loader(FlareTextureArray, "ring.tga", 3);
+	Texture2D_Loader(FlareTextureArray, "sun.tga", 4);
+
 	/// Initialization of freetype library with font_name file
 	freeType_init(font_name);
 
@@ -635,6 +765,7 @@ void init()
 	for (int i = 0; i < 8; i++) {
 		houses.push_back(House(5.0f * ((i % 4) - 1) - 2.5f, 4.0f * ((i / 4) * 2 - 1)));
 	}
+	sleigh->get_direction();
 	for (int i = 0; i < 20; i++) {
 		float size = rand() % 15 * 0.01f + 0.05f;
 		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 24 - 11.5f + (rand() % 10) * 0.1f - 0.5, rand() % 6 - 11.5f + (rand() % 10) * 0.1f - 0.5));
@@ -642,6 +773,8 @@ void init()
 		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 24 - 11.5f + (rand() % 10) * 0.1f - 0.5, rand() % 6 + 6.5f + (rand() % 10) * 0.1f - 0.5));
 	}
 	statue = new Statue(7.0f, 0.0f);
+
+	FlareMesh = createQuad(1, 1);
 
 	uInfo.snowballs = &snowballs;
 	uInfo.houses = &houses;
@@ -651,9 +784,12 @@ void init()
 
 	cams.push_back(Camera(0.0f, 20.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1, 0, 0, 0));
 	cams.push_back(Camera(0.0f, 20.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1, 0, 0, 1));
-	cams.push_back(Camera(-sleigh->get_direction()[0] * 5.0f, -sleigh->get_direction()[1] * 5.0f + 2.0f, -sleigh->get_direction()[2] * 5.0f, 
-		sleigh->get_pos()[0], sleigh->get_pos()[1], sleigh->get_pos()[2], 
+	cams.push_back(Camera(-sleigh->get_direction()[0] * 5.0f, -sleigh->get_direction()[1] * 5.0f + 2.0f, -sleigh->get_direction()[2] * 5.0f,
+		sleigh->get_pos()[0], sleigh->get_pos()[1], sleigh->get_pos()[2],
 		0, 1, 0, 0));
+
+	//Load flare from file
+	loadFlareFile(&AVTflare, "flare.txt");
 
 	// some GL settings
 	glEnable(GL_DEPTH_TEST);
@@ -669,22 +805,22 @@ void init()
 //
 
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
 
-//  GLUT initialization
+	//  GLUT initialization
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DEPTH|GLUT_DOUBLE|GLUT_RGBA|GLUT_MULTISAMPLE);
+	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA | GLUT_MULTISAMPLE);
 
-	glutInitContextVersion (4, 3);
-	glutInitContextProfile (GLUT_CORE_PROFILE );
+	glutInitContextVersion(4, 3);
+	glutInitContextProfile(GLUT_CORE_PROFILE);
 	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE | GLUT_DEBUG);
 
-	glutInitWindowPosition(100,100);
+	glutInitWindowPosition(100, 100);
 	glutInitWindowSize(WinX, WinY);
 	WindowHandle = glutCreateWindow(CAPTION);
 
 
-//  Callback Registration
+	//  Callback Registration
 	glutDisplayFunc(renderScene);
 	glutReshapeFunc(changeSize);
 
@@ -692,26 +828,26 @@ int main(int argc, char **argv) {
 	//glutIdleFunc(renderScene);  // Use it for maximum performance
 	glutTimerFunc(0, refresh, 0);    //use it to to get 60 FPS whatever
 
-//	Mouse and Keyboard Callbacks
+	//	Mouse and Keyboard Callbacks
 	glutKeyboardFunc(processKeysDown);
 	glutKeyboardUpFunc(processKeysUp);
 
 	glutMouseFunc(processMouseButtons);
 	glutMotionFunc(processMouseMotion);
-	glutMouseWheelFunc ( mouseWheel ) ;
-	
+	glutMouseWheelFunc(mouseWheel);
 
-//	return from main loop
+
+	//	return from main loop
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
 
-//	Init GLEW
+	//	Init GLEW
 	glewExperimental = GL_TRUE;
 	glewInit();
 
-	printf ("Vendor: %s\n", glGetString (GL_VENDOR));
-	printf ("Renderer: %s\n", glGetString (GL_RENDERER));
-	printf ("Version: %s\n", glGetString (GL_VERSION));
-	printf ("GLSL: %s\n", glGetString (GL_SHADING_LANGUAGE_VERSION));
+	printf("Vendor: %s\n", glGetString(GL_VENDOR));
+	printf("Renderer: %s\n", glGetString(GL_RENDERER));
+	printf("Version: %s\n", glGetString(GL_VERSION));
+	printf("GLSL: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
 
 	if (!setupShaders())
 		return(1);
@@ -726,5 +862,58 @@ int main(int argc, char **argv) {
 	return(0);
 }
 
+unsigned int getTextureId(char* name) {
+	int i;
 
+	for (i = 0; i < NTEXTURES; ++i)
+	{
+		if (strncmp(name, flareTextureNames[i], strlen(name)) == 0)
+			return i;
+	}
+	return -1;
+}
+
+void    loadFlareFile(FLARE_DEF* flare, char* filename)
+{
+	int     n = 0;
+	FILE* f;
+	char    buf[256];
+	int fields;
+
+	memset(flare, 0, sizeof(FLARE_DEF));
+
+	f = fopen(filename, "r");
+	if (f)
+	{
+		fgets(buf, sizeof(buf), f);
+		sscanf(buf, "%f %f", &flare->fScale, &flare->fMaxSize);
+
+		while (!feof(f))
+		{
+			char            name[8] = { '\0', };
+			double          dDist = 0.0, dSize = 0.0;
+			float			color[4];
+			int				id;
+
+			fgets(buf, sizeof(buf), f);
+			fields = sscanf(buf, "%4s %lf %lf ( %f %f %f %f )", name, &dDist, &dSize, &color[3], &color[0], &color[1], &color[2]);
+			if (fields == 7)
+			{
+				for (int i = 0; i < 4; ++i) color[i] = clamp(color[i] / 255.0f, 0.0f, 1.0f);
+				id = getTextureId(name);
+				if (id < 0) printf("Texture name not recognized\n");
+				else
+					flare->element[n].textureId = id;
+				flare->element[n].fDistance = (float)dDist;
+				flare->element[n].fSize = (float)dSize;
+				memcpy(flare->element[n].matDiffuse, color, 4 * sizeof(float));
+				++n;
+			}
+		}
+
+		flare->nPieces = n;
+		fclose(f);
+	}
+	else printf("Flare file opening error\n");
+}
 

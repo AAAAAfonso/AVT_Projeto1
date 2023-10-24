@@ -10,11 +10,17 @@ Functions to handle with struct MyMesh based meshes from Assimp meshes:
 #include <assert.h>
 #include <stdlib.h>
 #include <unordered_map>
+#include <assimp/cimport.h>
+#include <iostream>
+
+
 
 // assimp include files. These three are usually needed.
 #include "assimp/Importer.hpp"	
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
+#include <assimp/postprocess.h>    // Post processing flags
+
 
 #include "AVTmathLib.h"
 #include "VertexAttrDef.h"
@@ -25,9 +31,9 @@ Functions to handle with struct MyMesh based meshes from Assimp meshes:
 using namespace std;
 
 // Create an instance of the Importer class
-Assimp::Importer importer;
 // the global Assimp scene object
-const aiScene* scene = NULL;
+//const aiScene* scene = NULL;
+std::vector<std::unique_ptr<Assimp::Importer>> VecOfmporter;
 // scale factor for the Assimp model to fit in the window
 float scaleFactor;
 
@@ -42,13 +48,13 @@ unordered_map<std::string, GLuint> textureIdMap;
 #define aisgl_min(x,y) (x<y?x:y)
 #define aisgl_max(x,y) (y>x?y:x)
 
-void get_bounding_box_for_node(const aiNode* nd, aiVector3D* min, aiVector3D* max)
+void get_bounding_box_for_node(const aiNode* nd, aiVector3D* min, aiVector3D* max, const aiScene* sc)
 {
 	aiMatrix4x4 prev;
 	unsigned int n = 0, t;
 
 	for (; n < nd->mNumMeshes; ++n) {
-		const aiMesh* mesh = scene->mMeshes[nd->mMeshes[n]];
+		const aiMesh* mesh = sc->mMeshes[nd->mMeshes[n]];
 		for (t = 0; t < mesh->mNumVertices; ++t) {
 
 			aiVector3D tmp = mesh->mVertices[t];
@@ -64,28 +70,29 @@ void get_bounding_box_for_node(const aiNode* nd, aiVector3D* min, aiVector3D* ma
 	}
 
 	for (n = 0; n < nd->mNumChildren; ++n) {
-		get_bounding_box_for_node(nd->mChildren[n], min, max);
+		get_bounding_box_for_node(nd->mChildren[n], min, max, sc);
 	}
 }
 
 
-void get_bounding_box(aiVector3D* min, aiVector3D* max)
+void get_bounding_box(aiVector3D* min, aiVector3D* max, const aiScene* sc)
 {
 
 	min->x = min->y = min->z = 1e10f;
 	max->x = max->y = max->z = -1e10f;
-	get_bounding_box_for_node(scene->mRootNode, min, max);
+	get_bounding_box_for_node(sc->mRootNode, min, max, sc);
 }
 
-bool Import3DFromFile(const std::string& pFile)
-{
-
-	scene = importer.ReadFile(pFile, aiProcessPreset_TargetRealtime_Quality);
+bool Import3DFromFile(const aiScene** sc, const std::string& pFile)
+{	
+	
+	VecOfmporter.push_back(std::move(std::make_unique<Assimp::Importer>()));
+	*sc = VecOfmporter.back()->ReadFile(pFile, aiProcessPreset_TargetRealtime_Quality);
 
 	// If the import failed, report it
-	if (!scene)
+	if (!(*sc))
 	{
-		printf("%s\n", importer.GetErrorString());
+		printf("%s\n", VecOfmporter.back()->GetErrorString());
 		return false;
 	}
 
@@ -93,7 +100,7 @@ bool Import3DFromFile(const std::string& pFile)
 	printf("Import of scene %s succeeded.\n", pFile.c_str());
 
 	aiVector3D scene_min, scene_max, scene_center;
-	get_bounding_box(&scene_min, &scene_max);
+	get_bounding_box(&scene_min, &scene_max, (*sc));
 	float tmp;
 	tmp = scene_max.x - scene_min.x;
 	tmp = scene_max.y - scene_min.y > tmp ? scene_max.y - scene_min.y : tmp;
@@ -101,11 +108,12 @@ bool Import3DFromFile(const std::string& pFile)
 	scaleFactor = 1.f / tmp;
 
 	// We're done. Everything will be cleaned up by the importer destructor
+
 	return true;
 }
 
 
-bool LoadGLTexturesTUs(const aiScene* scene)  // Create OGL textures objects and maps them to texture units.  
+bool LoadGLTexturesTUs(const aiScene* scene, std::string modeldir)  // Create OGL textures objects and maps them to texture units.  
 {
 	aiString path;	// filename
 	string filename;
@@ -117,7 +125,7 @@ bool LoadGLTexturesTUs(const aiScene* scene)  // Create OGL textures objects and
 		for (unsigned int i = 0; i < scene->mMaterials[m]->GetTextureCount(aiTextureType_DIFFUSE); i++) {
 
 			scene->mMaterials[m]->GetTexture(aiTextureType_DIFFUSE, i, &path);
-			filename = model_dir;
+			filename = modeldir;
 			filename.append(path.data);
 			//fill map with textures, OpenGL image ids set to 0
 			textureIdMap[filename] = 0;
@@ -125,14 +133,14 @@ bool LoadGLTexturesTUs(const aiScene* scene)  // Create OGL textures objects and
 
 		for (unsigned int i = 0; i < scene->mMaterials[m]->GetTextureCount(aiTextureType_SPECULAR); i++) {
 			scene->mMaterials[m]->GetTexture(aiTextureType_SPECULAR, i, &path);
-			filename = model_dir;
+			filename = modeldir;
 			filename.append(path.data);
 			textureIdMap[filename] = 0;
 		}
 
 		for (unsigned int i = 0; i < scene->mMaterials[m]->GetTextureCount(aiTextureType_NORMALS); i++) {
 			scene->mMaterials[m]->GetTexture(aiTextureType_NORMALS, i, &path);
-			filename = model_dir;
+			filename = modeldir;
 			filename.append(path.data);
 			textureIdMap[filename] = 0;
 		}
@@ -187,7 +195,7 @@ void color4_to_float4(const aiColor4D* c, float f[4])
 	f[3] = c->a;
 }
 
-vector<struct MyMesh> createMeshFromAssimp(const aiScene* sc, const std::string filename) {
+vector<struct MyMesh> createMeshFromAssimp(const aiScene* sc, const std::string modeldir) {
 
 	vector<struct MyMesh> myMeshes;
 	struct MyMesh aMesh;
@@ -195,7 +203,7 @@ vector<struct MyMesh> createMeshFromAssimp(const aiScene* sc, const std::string 
 
 	printf("Cena: numero total de malhas = %d\n", sc->mNumMeshes);
 
-	LoadGLTexturesTUs(sc); //it creates the unordered map which maps image filenames to texture units TU
+	LoadGLTexturesTUs(sc, modeldir); //it creates the unordered map which maps image filenames to texture units TU
 
 	// For each mesh
 	for (unsigned int n = 0; n < sc->mNumMeshes; ++n)

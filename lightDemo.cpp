@@ -351,7 +351,7 @@ void renderScene(void) {
 	FrameCount++;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	renderRearView();
+	if (active_camera == 2) renderRearView();
 
 	// load identity matrices
 	loadIdentity(VIEW);
@@ -419,7 +419,8 @@ void renderScene(void) {
 	struct render_info rInfo = {shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId};
 
 	// draw the tori where the stencil is not 1 
-	glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
+	if (active_camera == 2) glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
+	else glStencilFunc(GL_ALWAYS, 0x1, 0x1);
 
 	terrain->render(rInfo);
 	sleigh->render(rInfo);

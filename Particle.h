@@ -1,3 +1,4 @@
+#pragma once
 #include <geometry.h>
 #include <render_info.h>
 #include <AVTmathLib.h>
@@ -5,10 +6,14 @@
 extern float mCompMatrix[COUNT_COMPUTED_MATRICES][16];
 extern float mNormal3x3[9];
 
-class Terrain {
+class Particle {
 private:
-	float width;
-	float height;
+	float start[4];
+	float pos[4];
+	float speed[4];
+	float rotation;
+	float time;
+	float time_passed = 0.0f;
 	MyMesh mesh;
 
 	void createMesh() {
@@ -19,7 +24,7 @@ private:
 		float shininess = 30.0f;
 		int texcount = 0;
 
-		mesh = createQuad(this->width, this->height);
+		mesh = createQuad(0.15f, 0.15f);
 		memcpy(mesh.mat.ambient, amb, 4 * sizeof(float));
 		memcpy(mesh.mat.diffuse, diff, 4 * sizeof(float));
 		memcpy(mesh.mat.specular, spec, 4 * sizeof(float));
@@ -29,12 +34,30 @@ private:
 	}
 
 public:
-	Terrain(float width, float height) {
-		this->width = width; this->height = height;
+	Particle(float x, float y, float z, float s_x, float s_y, float s_z, float rotation, float time) {
+		pos[0] = start[0] = x, pos[1] = start[1] = y, pos[2] = start[2] = z, pos[3] = start[3] = 1;
+		speed[0] = s_x, speed[1] = s_y, speed[2] = s_z; speed[3] = 0;
+		this->rotation = rotation;
+		this->time = time;
 
 		createMesh();
 	}
-	
+
+	void update(float deltatime) {
+		pos[0] += speed[0] * deltatime;
+		pos[1] += speed[1] * deltatime;
+		pos[2] += speed[2] * deltatime;
+
+		if (time_passed < this->time && pos[1] > 0) {
+			time_passed += deltatime;
+		}
+		else if (time_passed >= this->time) {
+			time_passed = 0.0f;
+			for (int i = 0; i < 4; i++) pos[i] = start[i];
+		} else if (pos[1] <= 0)
+			for (int i = 0; i < 4; i++) pos[i] = start[i];
+	}
+
 	void render(struct render_info rInfo) {
 		GLint loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.ambient");
 		glUniform4fv(loc, 1, mesh.mat.ambient);
@@ -45,10 +68,11 @@ public:
 		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
 		glUniform1f(loc, mesh.mat.shininess);
 
-		glUniform1i(rInfo.textMode_uniformId, 1);
+		glUniform1i(rInfo.textMode_uniformId, 2);
 
 		pushMatrix(MODEL);
-		rotate(MODEL, -90, 1.0f, 0.0f, 0.0f);
+		rotate(MODEL, rotation, 0.0f, 1.0f, 0.0f);
+		translate(MODEL, pos[0], pos[1], pos[2]);
 
 		// send matrices to OGL
 		computeDerivedMatrix(PROJ_VIEW_MODEL);

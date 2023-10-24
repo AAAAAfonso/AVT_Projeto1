@@ -8,7 +8,7 @@ struct render_info {
 	GLint vm_uniformId;
 	GLint pvm_uniformId;
 	GLint normal_uniformId;
-	GLint textured_uniformId;
+	GLint textMode_uniformId;
 };
 
 #endif

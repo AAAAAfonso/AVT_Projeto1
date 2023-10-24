@@ -77,10 +77,28 @@
     <ClInclude Include="meshFromAssimp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Tree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Statue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Snowball.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lamppost.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Particle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="House.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="flare.h">
+    <ClInclude Include="Present.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

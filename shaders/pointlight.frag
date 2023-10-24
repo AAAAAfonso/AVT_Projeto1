@@ -11,7 +11,9 @@ uniform float spot_l_threshold;
 
 uniform sampler2D texmap;
 uniform sampler2D texmap1;
-uniform bool textured;
+uniform sampler2D texmap2;
+uniform sampler2D texmap3;
+uniform int text_mode;
 
 
 struct Materials {
@@ -93,12 +95,21 @@ void main() {
 		}
 	}
 	
-	if (textured) {
+	if (text_mode == 3) {
+		vec4 texel;
+		texel = texture(texmap3, DataIn.tex_coord);
+		colorOut = min(texel*colorOut, 1.0f);
+	} else if (text_mode == 2) {
+		vec4 texel;
+		texel = texture(texmap2, DataIn.tex_coord);
+		if (texel.a == 0) discard;
+		colorOut = min(texel*colorOut, 1.0f);
+	} else if (text_mode == 1) {
 		vec4 texel, texel1;
 		texel = texture(texmap, DataIn.tex_coord);
 		texel1 = texture(texmap1, DataIn.tex_coord);
 		colorOut = min(texel*texel1*colorOut, 1.0f);
-	} else {
+	} else if (text_mode == 0) {
 		colorOut = min(colorOut + mat.ambient, 1.0f);
 	}
 

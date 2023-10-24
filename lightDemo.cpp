@@ -54,6 +54,8 @@
 #include "House.h"
 #include "Tree.h"
 #include "Statue.h"
+#include "Particle.h"
+#include "Present.h"
 
 
 
@@ -76,6 +78,7 @@ const string font_name = "fonts/arial.ttf";
 bool renderFlare = true;
 
 //Vector with meshes
+struct MyMesh rearViewModel;
 vector<struct MyMesh> myMeshes;
 MyMesh FlareMesh;
 
@@ -95,7 +98,7 @@ char model_dir[50];
 GLint pvm_uniformId;
 GLint vm_uniformId;
 GLint normal_uniformId;
-GLint tex_loc, tex_loc1, tex_loc2;
+GLint tex_loc, tex_loc1, tex_loc2, tex_loc3;
 
 GLint dirLPos_uniformId;
 GLint dirLToggled_uniformId;
@@ -111,8 +114,8 @@ GLint spotLToggled_uniformId;
 bool fogToggled = true;
 GLint fogToggled_uniformId;
 
-GLint textured_uniformId;
-GLuint TextureArray[2];
+GLint textMode_uniformId;
+GLuint TextureArray[4];
 
 // Mouse Tracking Variables
 int startX, startY, tracking = 0;
@@ -154,6 +157,8 @@ vector<SnowBall> snowballs;
 vector<House> houses;
 vector<Tree> trees;
 Statue* statue;
+vector<Particle> particles;
+Present* present;
 
 
 inline double clamp(const double x, const double min, const double max) {
@@ -214,6 +219,14 @@ void refresh(int value)
 		if (statue->getColided()) {
 			statue->updateStatue(1.0 / FPS);
 		}
+		for (int i = 0; i < particles.size(); i++) {
+			particles[i].update(1.0 / FPS);
+		}
+		if (present->getColided()) {
+			delete present;
+			present = new Present((rand() % 200) / 10 - 10.0f, (rand() % 200) / 10 - 10.0f);
+			uInfo.present = present;
+		}
 	}
 
 	glutPostRedisplay();
@@ -235,6 +248,41 @@ void changeSize(int w, int h) {
 	glViewport(0, 0, w, h);
 	// set the projection matrix
 	ratio = (1.0f * w) / h;
+	/* create a diamond shaped stencil area */
+	loadIdentity(PROJECTION);
+	if (w <= h)
+		ortho(-2.0, 2.0, -2.0 * (GLfloat)h / (GLfloat)w,
+			2.0 * (GLfloat)h / (GLfloat)w, -10, 10);
+	else
+		ortho(-2.0 * (GLfloat)w / (GLfloat)h,
+			2.0 * (GLfloat)w / (GLfloat)h, -2.0, 2.0, -10, 10);
+
+	// load identity matrices for Model-View
+	loadIdentity(VIEW);
+	loadIdentity(MODEL);
+
+	glUseProgram(shader.getProgramIndex());
+
+	//n�o vai ser preciso enviar o material pois o cubo n�o � desenhado
+
+	translate(MODEL, -0.9f, 1.2f, -0.5f);
+	scale(MODEL, 1.8f, 0.6f, 1.0f);
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	//glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	glClear(GL_STENCIL_BUFFER_BIT);
+
+	glStencilFunc(GL_NEVER, 0x1, 0x1);
+	glStencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
+
+	glBindVertexArray(rearViewModel.vao);
+	glDrawElements(rearViewModel.type, rearViewModel.numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
 	loadIdentity(PROJECTION);
 	perspective(53.13f, ratio, 0.1f, 1000.0f);
 }
@@ -331,10 +379,85 @@ void render_flare(FLARE_DEF* flare, int lx, int ly, int* m_viewport) {  //lx, ly
 	glDisable(GL_BLEND);
 }
 
-void renderScene(void) {
+void renderRearView(void) {
+	// load identity matrices
+	loadIdentity(VIEW);
+	loadIdentity(MODEL);
+	// set the camera using a function similar to gluLookAt
+	loadIdentity(PROJECTION);
+	perspective(53.13f, ratio, 0.1f, 1000.0f);
+	float* p = sleigh->get_pos();
+	float *dir = sleigh->get_direction();
+	lookAt(p[0] - 0.5*dir[0], p[1] - 0.5*dir[1], p[2] - 0.5*dir[2],
+		p[0] - 2*dir[0], p[1] - 2*dir[1], p[2] - 2*dir[2],
+		cams[2].get_up(0), cams[2].get_up(1), cams[2].get_up(2));
 
+	// use our shader
+
+	glUseProgram(shader.getProgramIndex());
+
+	//send the light position in eye coordinates
+	//glUniform4fv(lPos_uniformId, 1, lightPos); //efeito capacete do mineiro, ou seja lighPos foi definido em eye coord 
+
+	float res[4];
+	multMatrixPoint(VIEW, dirLightPos, res);
+	glUniform4fv(dirLPos_uniformId, 1, res);
+	glUniform1i(dirLToggled_uniformId, dirLightToggled);
+
+	for (int i = 0; i < 6; i++) {
+		float* pos = lampposts[i].get_pointlight_pos();
+		multMatrixPoint(VIEW, pos, res);
+		delete[] pos;
+		glUniform4fv(pointLPos_uniformIds[i], 1, res);
+	}
+	glUniform1i(pointLToggled_uniformId, pointLightToggled);
+
+	for (int i = 0; i < 2; i++) {
+		float* pos = sleigh->get_spotlight_pos(i);
+		multMatrixPoint(VIEW, pos, res);
+		delete[] pos;
+		glUniform4fv(spotLPos_uniformIds[i], 1, res);
+	}
+	dir[3] = 0.0f;
+	multMatrixPoint(VIEW, dir, res);
+	glUniform4fv(spotLSpot_uniformId, 1, res);
+	glUniform1f(spotLThreshold_uniformId, cos(spotLightAngle * 3.14f / 180));
+	glUniform1i(spotLToggled_uniformId, spotLightToggled);
+
+	glUniform1i(fogToggled_uniformId, fogToggled);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, TextureArray[2]);
+	glUniform1i(tex_loc, 1);
+	glUniform1i(tex_loc1, 2);
+	glUniform1i(tex_loc2, 3);
+
+	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId };
+
+	// draw the tori where the stencil is not 1 
+	glStencilFunc(GL_EQUAL, 0x1, 0x1);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+	terrain->render(rInfo);
+	sleigh->render(rInfo);
+	for (int i = 0; i < 6; i++) lampposts[i].render(rInfo);
+	for (int i = 0; i < snowballs.size(); i++) snowballs[i].render(rInfo);
+	for (int i = 0; i < houses.size(); i++) houses[i].render(rInfo);
+	for (int i = 0; i < trees.size(); i++) trees[i].render(rInfo);
+	for (int i = 0; i < particles.size(); i++) particles[i].render(rInfo);
+	present->render(rInfo);
+	statue->render(rInfo);
+}
+
+void renderScene(void) {
 	FrameCount++;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	if (active_camera == 2) renderRearView();
 
 	// load identity matrices
 	loadIdentity(VIEW);
@@ -386,14 +509,24 @@ void renderScene(void) {
 
 	glUniform1i(fogToggled_uniformId, fogToggled);
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
-	glUniform1i(tex_loc, 0);
-	glUniform1i(tex_loc1, 1);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, TextureArray[2]);
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, TextureArray[3]);
+		glUniform1i(tex_loc, 1);
+		glUniform1i(tex_loc1, 2);
+		glUniform1i(tex_loc2, 3);
+		glUniform1i(tex_loc3, 4);
 
-	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textured_uniformId };
+	struct render_info rInfo = {shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId};
+
+	// draw the tori where the stencil is not 1 
+	if (active_camera == 2) glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
+	else glStencilFunc(GL_ALWAYS, 0x1, 0x1);
 
 	terrain->render(rInfo);
 	sleigh->render(rInfo);
@@ -401,6 +534,8 @@ void renderScene(void) {
 	for (int i = 0; i < snowballs.size(); i++) snowballs[i].render(rInfo);
 	for (int i = 0; i < houses.size(); i++) houses[i].render(rInfo);
 	for (int i = 0; i < trees.size(); i++) trees[i].render(rInfo);
+	for (int i = 0; i < particles.size(); i++) particles[i].render(rInfo);
+	present->render(rInfo);
 	statue->render(rInfo);
 
 	//Render text (bitmap fonts) in screen coordinates. So use ortoghonal projection with viewport coordinates.
@@ -438,6 +573,8 @@ void renderScene(void) {
 		RenderText(shaderText, "PAUSED", m_viewport[2] / 2.0f - 100.0f, m_viewport[3] / 2.0f + 25.0f, 1.0f, 1.0f, 1.0f, 1.01f);
 	//RenderText(shaderText, "LIVES: ", 25.0f, m_viewport[3] - 50.0f, 1.0f, 0.5f, 0.8f, 0.2f);
 	//RenderText(shaderText, to_string(sleigh->get_lives()), 180.0f, m_viewport[3] - 50.0f, 1.0f, 0.5f, 0.8f, 0.2f);
+	//RenderText(shaderText, "POINTS: ", 25.0f, m_viewport[3] - 90.0f, 1.0f, 0.5f, 0.8f, 0.2f);
+	//RenderText(shaderText, to_string(sleigh->get_points()), 210.0f, m_viewport[3] - 90.0f, 1.0f, 0.5f, 0.8f, 0.2f);
 	popMatrix(PROJECTION);
 	popMatrix(VIEW);
 	popMatrix(MODEL);
@@ -551,7 +688,7 @@ void processKeysUp(unsigned char key, int xx, int yy)
 		break;
 	case 'r':
 		sleigh->missionFail();
-		sleigh->reset_lives();
+		sleigh->reset();
 		break;
 
 	case 27:
@@ -681,7 +818,9 @@ GLuint setupShaders() {
 	normal_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_normal");
 	tex_loc = glGetUniformLocation(shader.getProgramIndex(), "texmap");
 	tex_loc1 = glGetUniformLocation(shader.getProgramIndex(), "texmap1");
-	textured_uniformId = glGetUniformLocation(shader.getProgramIndex(), "textured");
+	tex_loc2 = glGetUniformLocation(shader.getProgramIndex(), "texmap2");
+	tex_loc3 = glGetUniformLocation(shader.getProgramIndex(), "texmap3");
+	textMode_uniformId = glGetUniformLocation(shader.getProgramIndex(), "text_mode");
 
 	dirLPos_uniformId = glGetUniformLocation(shader.getProgramIndex(), "d_l_pos");
 	dirLToggled_uniformId = glGetUniformLocation(shader.getProgramIndex(), "dir_l_toggled");
@@ -739,9 +878,11 @@ void init()
 
 	//Texture Object definition
 
-	glGenTextures(2, TextureArray);
+	glGenTextures(3, TextureArray);
 	Texture2D_Loader(TextureArray, "texmap.jpg", 0);
 	Texture2D_Loader(TextureArray, "texmap1.jpg", 1);
+	Texture2D_Loader(TextureArray, "texmap2.png", 2);
+	Texture2D_Loader(TextureArray, "texmap3.png", 3);
 
 	//Flare elements textures
 	glGenTextures(5, FlareTextureArray);
@@ -773,6 +914,14 @@ void init()
 		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 24 - 11.5f + (rand() % 10) * 0.1f - 0.5, rand() % 6 + 6.5f + (rand() % 10) * 0.1f - 0.5));
 	}
 	statue = new Statue(7.0f, 0.0f);
+	for (int i = 0; i < 1000; i++) {
+		float x = (rand() % 250) / 10 - 12.5f; float y = 8.0f + (rand() % 50) / 10; float z = (rand() % 250) / 10 - 12.5f;
+		float s_y = -1.0f - (rand() % 10) / 10.0f; 
+		float time = 10.0f + (rand() % 50) / 10.0f;
+		float rotation = rand() % 360;
+		particles.push_back(Particle(x, y, z, 0.0f, s_y, 0.0f, rotation, time));
+	}
+	present = new Present((rand() % 200) / 10 - 10.0f, (rand() % 200) / 10 - 10.0f);
 
 	FlareMesh = createQuad(1, 1);
 
@@ -781,6 +930,20 @@ void init()
 	uInfo.trees = &trees;
 	uInfo.lampposts = &lampposts;
 	uInfo.statue = statue;
+	uInfo.present = present;
+
+	// create geometry and VAO of the rearViewWindow
+	float amb[] = { 0.2f, 0.15f, 0.1f, 1.0f };
+	float diff[] = { 0.8f, 0.6f, 0.4f, 1.0f };
+	float spec[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+	float emissive[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	rearViewModel = createCube();
+	memcpy(rearViewModel.mat.ambient, amb, 4 * sizeof(float));
+	memcpy(rearViewModel.mat.diffuse, diff, 4 * sizeof(float));
+	memcpy(rearViewModel.mat.specular, spec, 4 * sizeof(float));
+	memcpy(rearViewModel.mat.emissive, emissive, 4 * sizeof(float));
+	rearViewModel.mat.shininess = 100.0f;
+	rearViewModel.mat.texCount = 0;
 
 	cams.push_back(Camera(0.0f, 20.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1, 0, 0, 0));
 	cams.push_back(Camera(0.0f, 20.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1, 0, 0, 1));
@@ -797,6 +960,9 @@ void init()
 	glEnable(GL_MULTISAMPLE);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
+	glClearStencil(0x0);
+	glEnable(GL_STENCIL_TEST);
+
 }
 
 // ------------------------------------------------------------
@@ -809,7 +975,7 @@ int main(int argc, char** argv) {
 
 	//  GLUT initialization
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA | GLUT_MULTISAMPLE);
+	glutInitDisplayMode(GLUT_DEPTH|GLUT_DOUBLE|GLUT_RGBA|GLUT_STENCIL|GLUT_MULTISAMPLE);
 
 	glutInitContextVersion(4, 3);
 	glutInitContextProfile(GLUT_CORE_PROFILE);

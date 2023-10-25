@@ -330,7 +330,7 @@ void render_flare(FLARE_DEF* flare, int lx, int ly, int* m_viewport) {  //lx, ly
 
 	// Render each element. To be used Texture Unit 0
 
-	glUniform1i(textured_uniformId, 3); // draw modulated textured particles
+	glUniform1i(textMode_uniformId, 3); // draw modulated textured particles
 	glUniform1i(tex_loc, 0);  //use TU 0
 
 	for (i = 0; i < flare->nPieces; ++i)

@@ -103,7 +103,7 @@ public:
 				(*(uInfo->houses))[i].aabb_max[0] >= this->aabb_min[0] &&
 				(*(uInfo->houses))[i].aabb_min[1] <= this->aabb_max[1] &&
 				(*(uInfo->houses))[i].aabb_max[1] >= this->aabb_min[1] &&
-				(*(uInfo->houses))[i].aabb_min[2] <= this->aabb_max[2] &&
+		 		(*(uInfo->houses))[i].aabb_min[2] <= this->aabb_max[2] &&
 				(*(uInfo->houses))[i].aabb_max[2] >= this->aabb_min[2]) {
 				(*(uInfo->houses))[i].setColided(dir);
 				col_detected = true;

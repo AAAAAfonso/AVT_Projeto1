@@ -45,7 +45,10 @@ void main() {
 	vec4 spec = vec4(0.0);
 
 	vec3 n;
-	if (text_mode == 4) {
+	if (text_mode == 5) {
+		colorOut = vec4(texture(texmap, DataIn.tex_coord).rgb, 1.0f);
+		return;
+	} else if (text_mode == 4) {
 		n = normalize(2.0*texture(bumpmap, DataIn.tex_coord).rgb - 1.0);
 	} else {
 		n = normalize(DataIn.normal);

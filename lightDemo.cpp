@@ -56,6 +56,7 @@
 #include "Statue.h"
 #include "Particle.h"
 #include "Present.h"
+#include "Skybox.h"
 
 
 
@@ -127,7 +128,7 @@ float r = 15.0f;
 //Flare effect
 FLARE_DEF AVTflare;
 float lightScreenPos[3];  //Position of the light in Window Coordinates
-GLuint FlareTextureArray[5];
+GLuint FlareTextureArray[6];
 
 // Frame counting and FPS computation
 long myTime, timebase = 0, frame = 0;
@@ -159,6 +160,7 @@ vector<Tree> trees;
 Statue* statue;
 vector<Particle> particles;
 Present* present;
+Skybox* skybox;
 
 
 inline double clamp(const double x, const double min, const double max) {
@@ -432,6 +434,7 @@ void renderRearView(void) {
 	glStencilFunc(GL_EQUAL, 0x1, 0x1);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
+	skybox->render(rInfo);
 	terrain->render(rInfo);
 	sleigh->render(rInfo);
 	for (int i = 0; i < 6; i++) lampposts[i].render(rInfo);
@@ -505,6 +508,7 @@ void renderScene(void) {
 	if (active_camera == 2) glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
 	else glStencilFunc(GL_ALWAYS, 0x1, 0x1);
 
+	skybox->render(rInfo);
 	terrain->render(rInfo);
 	sleigh->render(rInfo);
 	for (int i = 0; i < lampposts.size(); i++) lampposts[i].render(rInfo);
@@ -856,12 +860,13 @@ void init()
 
 	//Texture Object definition
 
-	glGenTextures(5, TextureArray);
+	glGenTextures(6, TextureArray);
 	Texture2D_Loader(TextureArray, "texmap.jpg", 0);
 	Texture2D_Loader(TextureArray, "texmap1.jpg", 1);
 	Texture2D_Loader(TextureArray, "texmap2.png", 2);
 	Texture2D_Loader(TextureArray, "texmap3.png", 3);
 	Texture2D_Loader(TextureArray, "bumpmap.jpg", 4);
+	Texture2D_Loader(TextureArray, "texmap4.jpg", 5);
 
 	//Flare elements textures
 	glGenTextures(5, FlareTextureArray);
@@ -874,7 +879,7 @@ void init()
 	/// Initialization of freetype library with font_name file
 	freeType_init(font_name);
 
-	terrain = new Terrain(25.0f, 25.0f);
+	terrain = new Terrain(40.0f, 40.0f);
 	sleigh = new Sleigh(0.0f, 0.0f, 0.0f, 0.0f);
 	for (int i = 0; i < 360; i += 360 / 12) {
 		snowballs.push_back(SnowBall(0.5f, i, 7.0f));
@@ -886,11 +891,11 @@ void init()
 		houses.push_back(House(5.0f * ((i % 4) - 1) - 2.5f, 4.0f * ((i / 4) * 2 - 1)));
 	}
 	sleigh->get_direction();
-	for (int i = 0; i < 20; i++) {
+	for (int i = 0; i < 40; i++) {
 		float size = rand() % 15 * 0.01f + 0.05f;
-		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 24 - 11.5f + (rand() % 10) * 0.1f - 0.5, rand() % 6 - 11.5f + (rand() % 10) * 0.1f - 0.5));
+		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 39 - 19.5f + (rand() % 10) * 0.1f - 0.5, rand() % 13 - 18.5f + (rand() % 10) * 0.1f - 0.5));
 		size = rand() % 15 * 0.01f + 0.05f;
-		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 24 - 11.5f + (rand() % 10) * 0.1f - 0.5, rand() % 6 + 6.5f + (rand() % 10) * 0.1f - 0.5));
+		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 39 - 19.5f + (rand() % 10) * 0.1f - 0.5, rand() % 13 + 6.5f + (rand() % 10) * 0.1f - 0.5));
 	}
 	statue = new Statue(7.0f, 0.0f);
 	for (int i = 0; i < 1000; i++) {
@@ -901,6 +906,7 @@ void init()
 		particles.push_back(Particle(x, y, z, 0.0f, s_y, 0.0f, rotation, time));
 	}
 	present = new Present((rand() % 200) / 10 - 10.0f, (rand() % 200) / 10 - 10.0f);
+	skybox = new Skybox();
 
 	FlareMesh = createQuad(1, 1);
 

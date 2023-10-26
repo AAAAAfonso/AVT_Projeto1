@@ -180,6 +180,7 @@
     <ClInclude Include="Particle.h" />
     <ClInclude Include="Present.h" />
     <ClInclude Include="render_info.h" />
+    <ClInclude Include="Skybox.h" />
     <ClInclude Include="Sleigh.h" />
     <ClInclude Include="Snowball.h" />
     <ClInclude Include="Statue.h" />

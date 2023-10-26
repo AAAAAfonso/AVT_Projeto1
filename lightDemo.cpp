@@ -550,8 +550,8 @@ void renderScene(void) {
 	//	RenderText(shaderText, "PAUSED", m_viewport[2] / 2.0f - 100.0f, m_viewport[3] / 2.0f + 25.0f, 1.0f, 1.0f, 1.0f, 1.01f);
 	//RenderText(shaderText, "LIVES: ", 25.0f, m_viewport[3] - 50.0f, 1.0f, 0.5f, 0.8f, 0.2f);
 	//RenderText(shaderText, to_string(sleigh->get_lives()), 180.0f, m_viewport[3] - 50.0f, 1.0f, 0.5f, 0.8f, 0.2f);
-	//RenderText(shaderText, "POINTS: ", 25.0f, m_viewport[3] - 90.0f, 1.0f, 0.5f, 0.8f, 0.2f);
-	//RenderText(shaderText, to_string(sleigh->get_points()), 210.0f, m_viewport[3] - 90.0f, 1.0f, 0.5f, 0.8f, 0.2f);
+	//RenderText(shaderText, "POINTS: ", 25.0f, m_viewport[3] - 100.0f, 1.0f, 0.5f, 0.8f, 0.2f);
+	//RenderText(shaderText, to_string(sleigh->get_points()), 220.0f, m_viewport[3] - 100.0f, 1.0f, 0.5f, 0.8f, 0.2f);
 	popMatrix(PROJECTION);
 	popMatrix(VIEW);
 	popMatrix(MODEL);
@@ -882,7 +882,7 @@ void init()
 	for (int i = 0; i < 6; i++) {
 		lampposts.push_back(Lamppost(5.0f * ((i % 3) - 1), 2.5f * ((i / 3) * 2 - 1)));
 	}
-	for (int i = 0; i < 8; i++) {
+	for (int i = 0; i < 1; i++) {
 		houses.push_back(House(5.0f * ((i % 4) - 1) - 2.5f, 4.0f * ((i / 4) * 2 - 1)));
 	}
 	sleigh->get_direction();

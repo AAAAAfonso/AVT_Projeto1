@@ -57,10 +57,10 @@ public:
 
 		glUniform1i(rInfo.textMode_uniformId, 3);
 
-		GLint tex_loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texmap");
+		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texmap");
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, rInfo.TextureArray[3]);
-		glUniform1i(tex_loc, 0);
+		glUniform1i(loc, 0);
 
 		pushMatrix(MODEL);
 		translate(MODEL, this->x - 0.25f, 0.0f, this->z - 0.25f);

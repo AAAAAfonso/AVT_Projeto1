@@ -89,10 +89,10 @@ public:
 
 			glUniform1i(rInfo.textMode_uniformId, 4);
 
-			GLint bump_loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "bumpmap");
+			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "bumpmap");
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, rInfo.TextureArray[4]);
-			glUniform1i(bump_loc, 0);
+			glUniform1i(loc, 0);
 
 			pushMatrix(MODEL);
 			translate(MODEL, this->pos[0], this->pos[1], this->pos[2]);

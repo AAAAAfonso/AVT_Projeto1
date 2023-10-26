@@ -47,6 +47,15 @@ public:
 
 		glUniform1i(rInfo.textMode_uniformId, 1);
 
+		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texmap");
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, rInfo.TextureArray[0]);
+		glUniform1i(loc, 0);
+		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texmap1");
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, rInfo.TextureArray[1]);
+		glUniform1i(loc, 1);
+
 		pushMatrix(MODEL);
 		rotate(MODEL, -90, 1.0f, 0.0f, 0.0f);
 

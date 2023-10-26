@@ -13,6 +13,7 @@ uniform sampler2D texmap;
 uniform sampler2D texmap1;
 uniform sampler2D texmap2;
 uniform sampler2D texmap3;
+uniform sampler2D bumpmap;
 uniform int text_mode;
 
 
@@ -37,13 +38,22 @@ in Data {
 	vec3 spotLightDir[2];
 	vec3 spotLightSpot;
 	vec2 tex_coord;
+	vec2 sphere_coord;
 } DataIn;
 
 void main() {
 
 	vec4 spec = vec4(0.0);
 
-	vec3 n = normalize(DataIn.normal);
+	vec3 n;
+	if (text_mode == 5) {
+		colorOut = vec4(texture(texmap, DataIn.tex_coord).rgb, 1.0f);
+		return;
+	} else if (text_mode == 4) {
+		n = normalize(2.0*texture(bumpmap, DataIn.tex_coord).rgb - 1.0);
+	} else {
+		n = normalize(DataIn.normal);
+	}
 	vec3 e = normalize(DataIn.eye);
 	bool fogged_frag = true;
 
@@ -95,7 +105,12 @@ void main() {
 			}
 		}
 	}
-	if (text_mode == 4){
+
+	if (text_mode == 6) {    //Environmental sphere mapping
+		vec4 texel = texture(texmap, DataIn.sphere_coord);
+		vec4 aux_color = mix(texel, colorOut, 0.3);
+	    colorOut = vec4(aux_color.rgb, colorOut.a);
+	} else if (text_mode == 7){
 		vec4 texel;
 		texel = texture(texmap, DataIn.tex_coord);
 		//if((texel.a == 0.0)  || (mat.diffuse.a == 0.0) ) discard; weird error
@@ -104,11 +119,11 @@ void main() {
 		fogged_frag = false;
 	} else if (text_mode == 3) {
 		vec4 texel;
-		texel = texture(texmap3, DataIn.tex_coord);
+		texel = texture(texmap, DataIn.tex_coord);
 		colorOut = min(texel*colorOut, 1.0f);
 	} else if (text_mode == 2) {
 		vec4 texel;
-		texel = texture(texmap2, DataIn.tex_coord);
+		texel = texture(texmap, DataIn.tex_coord);
 		if (texel.a == 0) discard;
 		colorOut = min(texel*colorOut, 1.0f);
 	} else if (text_mode == 1) {
@@ -116,13 +131,13 @@ void main() {
 		texel = texture(texmap, DataIn.tex_coord);
 		texel1 = texture(texmap1, DataIn.tex_coord);
 		colorOut = min(texel*texel1*colorOut, 1.0f);
-	} else if (text_mode == 0) {
+	} else {
 		colorOut = min(colorOut + mat.ambient, 1.0f);
 	} 
 
 	if (fog_toggled && fogged_frag) {
 		vec3 final_color = mix(fogColor, vec3(colorOut), fogAmount );
-		colorOut = vec4(final_color, 1);
+		colorOut = vec4(final_color, min(colorOut.a*2.0f, 1.0f));		
 		fogged_frag = true;
 	}
 }

@@ -6,7 +6,7 @@
 extern float mCompMatrix[COUNT_COMPUTED_MATRICES][16];
 extern float mNormal3x3[9];
 
-class Present {
+class Skybox {
 private:
 	float x, z;
 
@@ -32,16 +32,8 @@ private:
 	}
 
 public:
-	float aabb_max[4];
-	float aabb_min[4];
 
-	Present(float x, float z) {
-
-		this->x = x; this->z = z;
-
-		aabb_max[0] = this->x + 0.25f; aabb_max[1] = 0.5f; aabb_max[2] = this->z + 0.25f;
-		aabb_min[0] = this->x - 0.25f; aabb_min[1] = 0.0f; aabb_min[2] = this->z - 0.25f;
-
+	Skybox() {
 		createMesh();
 	}
 
@@ -55,16 +47,19 @@ public:
 		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
 		glUniform1f(loc, mesh.mat.shininess);
 
-		glUniform1i(rInfo.textMode_uniformId, 3);
+		glUniform1i(rInfo.textMode_uniformId, 5);
 
 		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texmap");
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, rInfo.TextureArray[3]);
+		glBindTexture(GL_TEXTURE_2D, rInfo.TextureArray[5]);
 		glUniform1i(loc, 0);
 
+		glDepthMask(GL_FALSE);
+		glFrontFace(GL_CW);
+
 		pushMatrix(MODEL);
-		translate(MODEL, this->x - 0.25f, 0.0f, this->z - 0.25f);
-		scale(MODEL, 0.5f, 0.5f, 0.5f);
+		translate(MODEL, -100.0f, -100.0f, -100.0f);
+		scale(MODEL, 200.0f, 200.0f, 200.0f);
 
 		// send matrices to OGL
 		computeDerivedMatrix(PROJ_VIEW_MODEL);
@@ -80,6 +75,9 @@ public:
 		glBindVertexArray(0);
 
 		popMatrix(MODEL);
+
+		glFrontFace(GL_CCW); // restore counter clockwise vertex order to mean the front
+		glDepthMask(GL_TRUE);
 	}
 
 

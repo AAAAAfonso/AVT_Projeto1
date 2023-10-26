@@ -57,6 +57,7 @@
 #include "Particle.h"
 #include "Present.h"
 #include "LensFlare.h"
+#include "Skybox.h"
 
 
 
@@ -66,7 +67,7 @@ using namespace std;
 int WindowHandle = 0;
 int WinX = 1024, WinY = 768;
 
-#define FPS 40
+#define FPS 75
 
 unsigned int FrameCount = 0;
 
@@ -98,7 +99,7 @@ char model_dir[50];
 GLint pvm_uniformId;
 GLint vm_uniformId;
 GLint normal_uniformId;
-GLint tex_loc, tex_loc1, tex_loc2, tex_loc3;
+GLint tex_loc, tex_loc1, tex_loc2, tex_loc3, bump_loc;
 
 GLint dirLPos_uniformId;
 GLint dirLToggled_uniformId;
@@ -115,7 +116,7 @@ bool fogToggled = true;
 GLint fogToggled_uniformId;
 
 GLint textMode_uniformId;
-GLuint TextureArray[4];
+GLuint TextureArray[7];
 
 // Mouse Tracking Variables
 int startX, startY, tracking = 0;
@@ -159,6 +160,7 @@ vector<Tree> trees;
 Statue* statue;
 vector<Particle> particles;
 Present* present;
+Skybox* skybox;
 
 
 
@@ -334,22 +336,13 @@ void renderRearView(void) {
 
 	glUniform1i(fogToggled_uniformId, fogToggled);
 
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, TextureArray[2]);
-	glUniform1i(tex_loc, 1);
-	glUniform1i(tex_loc1, 2);
-	glUniform1i(tex_loc2, 3);
-
-	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId };
+	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray };
 
 	// draw the tori where the stencil is not 1 
 	glStencilFunc(GL_EQUAL, 0x1, 0x1);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
+	skybox->render(rInfo);
 	terrain->render(rInfo);
 	sleigh->render(rInfo);
 	for (int i = 0; i < 6; i++) lampposts[i].render(rInfo);
@@ -417,25 +410,13 @@ void renderScene(void) {
 
 	glUniform1i(fogToggled_uniformId, fogToggled);
 
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, TextureArray[2]);
-		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_2D, TextureArray[3]);
-		glUniform1i(tex_loc, 1);
-		glUniform1i(tex_loc1, 2);
-		glUniform1i(tex_loc2, 3);
-		glUniform1i(tex_loc3, 4);
-
-	struct render_info rInfo = {shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId};
+	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray };
 
 	// draw the tori where the stencil is not 1 
 	if (active_camera == 2) glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
 	else glStencilFunc(GL_ALWAYS, 0x1, 0x1);
 
+	skybox->render(rInfo);
 	terrain->render(rInfo);
 	sleigh->render(rInfo);
 	for (int i = 0; i < lampposts.size(); i++) lampposts[i].render(rInfo);
@@ -475,13 +456,13 @@ void renderScene(void) {
 	pushMatrix(VIEW);
 	loadIdentity(VIEW);
 	ortho(m_viewport[0], m_viewport[0] + m_viewport[2] - 1, m_viewport[1], m_viewport[1] + m_viewport[3] - 1, -1, 1);
-	lensflare->render(rInfo, flarePos[0], flarePos[1], m_viewport);
-	if (paused)
-		RenderText(shaderText, "PAUSED", m_viewport[2] / 2.0f - 100.0f, m_viewport[3] / 2.0f + 25.0f, 1.0f, 1.0f, 1.0f, 1.01f);
+	//lensflare->render(rInfo, flarePos[0], flarePos[1], m_viewport);
+	//if (paused)
+		//RenderText(shaderText, "PAUSED", m_viewport[2] / 2.0f - 100.0f, m_viewport[3] / 2.0f + 25.0f, 1.0f, 1.0f, 1.0f, 1.01f);
 	//RenderText(shaderText, "LIVES: ", 25.0f, m_viewport[3] - 50.0f, 1.0f, 0.5f, 0.8f, 0.2f);
 	//RenderText(shaderText, to_string(sleigh->get_lives()), 180.0f, m_viewport[3] - 50.0f, 1.0f, 0.5f, 0.8f, 0.2f);
-	//RenderText(shaderText, "POINTS: ", 25.0f, m_viewport[3] - 90.0f, 1.0f, 0.5f, 0.8f, 0.2f);
-	//RenderText(shaderText, to_string(sleigh->get_points()), 210.0f, m_viewport[3] - 90.0f, 1.0f, 0.5f, 0.8f, 0.2f);
+	//RenderText(shaderText, "POINTS: ", 25.0f, m_viewport[3] - 100.0f, 1.0f, 0.5f, 0.8f, 0.2f);
+	//RenderText(shaderText, to_string(sleigh->get_points()), 220.0f, m_viewport[3] - 100.0f, 1.0f, 0.5f, 0.8f, 0.2f);
 	popMatrix(PROJECTION);
 	popMatrix(VIEW);
 	popMatrix(MODEL);
@@ -727,6 +708,7 @@ GLuint setupShaders() {
 	tex_loc1 = glGetUniformLocation(shader.getProgramIndex(), "texmap1");
 	tex_loc2 = glGetUniformLocation(shader.getProgramIndex(), "texmap2");
 	tex_loc3 = glGetUniformLocation(shader.getProgramIndex(), "texmap3");
+	bump_loc = glGetUniformLocation(shader.getProgramIndex(), "bumpmap");
 	textMode_uniformId = glGetUniformLocation(shader.getProgramIndex(), "text_mode");
 
 
@@ -786,17 +768,20 @@ void init()
 
 	//Texture Object definition
 
-	glGenTextures(3, TextureArray);
+	glGenTextures(7, TextureArray);
 	Texture2D_Loader(TextureArray, "texmap.jpg", 0);
 	Texture2D_Loader(TextureArray, "texmap1.jpg", 1);
 	Texture2D_Loader(TextureArray, "texmap2.png", 2);
 	Texture2D_Loader(TextureArray, "texmap3.png", 3);
+	Texture2D_Loader(TextureArray, "bumpmap.jpg", 4);
+	Texture2D_Loader(TextureArray, "texmap4.jpg", 5);
+	Texture2D_Loader(TextureArray, "texmap5.jpg", 6);
 
 	/// Initialization of freetype library with font_name file
 	freeType_init(font_name);
 
-	lensflare = new LensFlare(1.0f, "./flare.txt"); 
-	terrain = new Terrain(25.0f, 25.0f);
+	//lensflare = new LensFlare(1.0f, "./flare.txt"); 
+	terrain = new Terrain(40.0f, 40.0f);
 	sleigh = new Sleigh(0.0f, 0.0f, 0.0f, 0.0f);
 	for (int i = 0; i < 360; i += 360 / 12) {
 		snowballs.push_back(SnowBall(0.5f, i, 7.0f));
@@ -808,11 +793,11 @@ void init()
 		houses.push_back(House(5.0f * ((i % 4) - 1) - 2.5f, 4.0f * ((i / 4) * 2 - 1)));
 	}
 	sleigh->get_direction();
-	for (int i = 0; i < 20; i++) {
+	for (int i = 0; i < 40; i++) {
 		float size = rand() % 15 * 0.01f + 0.05f;
-		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 24 - 11.5f + (rand() % 10) * 0.1f - 0.5, rand() % 6 - 11.5f + (rand() % 10) * 0.1f - 0.5));
+		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 39 - 19.5f + (rand() % 10) * 0.1f - 0.5, rand() % 13 - 18.5f + (rand() % 10) * 0.1f - 0.5));
 		size = rand() % 15 * 0.01f + 0.05f;
-		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 24 - 11.5f + (rand() % 10) * 0.1f - 0.5, rand() % 6 + 6.5f + (rand() % 10) * 0.1f - 0.5));
+		trees.push_back(Tree(size, size * (2.0f + rand() % 10 * 0.2f), rand() % 39 - 19.5f + (rand() % 10) * 0.1f - 0.5, rand() % 13 + 6.5f + (rand() % 10) * 0.1f - 0.5));
 	}
 	statue = new Statue(7.0f, 0.0f);
 	for (int i = 0; i < 1000; i++) {
@@ -823,6 +808,7 @@ void init()
 		particles.push_back(Particle(x, y, z, 0.0f, s_y, 0.0f, rotation, time));
 	}
 	present = new Present((rand() % 200) / 10 - 10.0f, (rand() % 200) / 10 - 10.0f);
+	skybox = new Skybox();
 
 	uInfo.snowballs = &snowballs;
 	uInfo.houses = &houses;

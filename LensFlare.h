@@ -134,7 +134,7 @@ public:
 
 			// Render each element. To be used Texture Unit 0
 			GLint tex_loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texmap");
-			glUniform1i(rInfo.textMode_uniformId, 4); // draw modulated textured particles
+			glUniform1i(rInfo.textMode_uniformId, 7); // draw modulated textured particles
 			glUniform1i(tex_loc, 10);  //use TU 10
 
 			for (i = 0; i < this->AVTflare->nPieces; ++i)

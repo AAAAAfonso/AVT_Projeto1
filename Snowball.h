@@ -87,7 +87,12 @@ public:
 			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
 			glUniform1f(loc, mesh.mat.shininess);
 
-			glUniform1i(rInfo.textMode_uniformId, 0);
+			glUniform1i(rInfo.textMode_uniformId, 4);
+
+			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "bumpmap");
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, rInfo.TextureArray[4]);
+			glUniform1i(loc, 0);
 
 			pushMatrix(MODEL);
 			translate(MODEL, this->pos[0], this->pos[1], this->pos[2]);

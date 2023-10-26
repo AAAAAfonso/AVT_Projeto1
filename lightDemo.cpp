@@ -64,7 +64,7 @@ using namespace std;
 int WindowHandle = 0;
 int WinX = 1024, WinY = 768;
 
-#define FPS 40
+#define FPS 75
 
 unsigned int FrameCount = 0;
 
@@ -94,7 +94,7 @@ char model_dir[50];
 GLint pvm_uniformId;
 GLint vm_uniformId;
 GLint normal_uniformId;
-GLint tex_loc, tex_loc1, tex_loc2, tex_loc3;
+GLint tex_loc, tex_loc1, tex_loc2, tex_loc3, bump_loc;
 
 GLint dirLPos_uniformId;
 GLint dirLToggled_uniformId;
@@ -111,7 +111,7 @@ bool fogToggled = true;
 GLint fogToggled_uniformId;
 
 GLint textMode_uniformId;
-GLuint TextureArray[4];
+GLuint TextureArray[5];
 
 // Mouse Tracking Variables
 int startX, startY, tracking = 0;
@@ -326,9 +326,15 @@ void renderRearView(void) {
 	glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, TextureArray[2]);
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D, TextureArray[3]);
+	glActiveTexture(GL_TEXTURE5);
+	glBindTexture(GL_TEXTURE_2D, TextureArray[4]);
 	glUniform1i(tex_loc, 1);
 	glUniform1i(tex_loc1, 2);
 	glUniform1i(tex_loc2, 3);
+	glUniform1i(tex_loc3, 4);
+	glUniform1i(tex_loc3, 5);
 
 	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId };
 
@@ -411,10 +417,13 @@ void renderScene(void) {
 		glBindTexture(GL_TEXTURE_2D, TextureArray[2]);
 		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_2D, TextureArray[3]);
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_2D, TextureArray[4]);
 		glUniform1i(tex_loc, 1);
 		glUniform1i(tex_loc1, 2);
 		glUniform1i(tex_loc2, 3);
 		glUniform1i(tex_loc3, 4);
+		glUniform1i(tex_loc3, 5);
 
 	struct render_info rInfo = {shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId};
 
@@ -697,6 +706,7 @@ GLuint setupShaders() {
 	tex_loc1 = glGetUniformLocation(shader.getProgramIndex(), "texmap1");
 	tex_loc2 = glGetUniformLocation(shader.getProgramIndex(), "texmap2");
 	tex_loc3 = glGetUniformLocation(shader.getProgramIndex(), "texmap3");
+	bump_loc = glGetUniformLocation(shader.getProgramIndex(), "bumpmap");
 	textMode_uniformId = glGetUniformLocation(shader.getProgramIndex(), "text_mode");
 
 	dirLPos_uniformId = glGetUniformLocation(shader.getProgramIndex(), "d_l_pos");
@@ -755,11 +765,12 @@ void init()
 
 	//Texture Object definition
 
-	glGenTextures(3, TextureArray);
+	glGenTextures(5, TextureArray);
 	Texture2D_Loader(TextureArray, "texmap.jpg", 0);
 	Texture2D_Loader(TextureArray, "texmap1.jpg", 1);
 	Texture2D_Loader(TextureArray, "texmap2.png", 2);
 	Texture2D_Loader(TextureArray, "texmap3.png", 3);
+	Texture2D_Loader(TextureArray, "bumpmap.png", 4);
 
 	/// Initialization of freetype library with font_name file
 	freeType_init(font_name);

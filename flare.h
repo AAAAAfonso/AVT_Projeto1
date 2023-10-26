@@ -25,6 +25,14 @@ typedef struct FLARE_DEF {
 
 char* flareTextureNames[NTEXTURES] = { "crcl", "flar", "hxgn", "ring", "sun" };
 
+inline double clamp(const double x, const double min, const double max) {
+    return (x < min ? min : (x > max ? max : x));
+}
+
+inline int clampi(const int x, const int min, const int max) {
+    return (x < min ? min : (x > max ? max : x));
+}
+
 void    render_flare(FLARE_DEF* flare, int lx, int ly, int* m_viewport);
 void    loadFlareFile(FLARE_DEF* flare, char* filename);
 

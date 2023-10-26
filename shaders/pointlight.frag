@@ -45,6 +45,7 @@ void main() {
 
 	vec3 n = normalize(DataIn.normal);
 	vec3 e = normalize(DataIn.eye);
+	bool fogged_frag = true;
 
 	vec3 fogColor = vec3(0.5,0.6,0.7);
 	float dist = length(pos); 
@@ -94,8 +95,14 @@ void main() {
 			}
 		}
 	}
-	
-	if (text_mode == 3) {
+	if (text_mode == 4){
+		vec4 texel;
+		texel = texture(texmap, DataIn.tex_coord);
+		//if((texel.a == 0.0)  || (mat.diffuse.a == 0.0) ) discard; weird error
+		//else
+		colorOut = mat.diffuse * texel;
+		fogged_frag = false;
+	} else if (text_mode == 3) {
 		vec4 texel;
 		texel = texture(texmap3, DataIn.tex_coord);
 		colorOut = min(texel*colorOut, 1.0f);
@@ -111,10 +118,11 @@ void main() {
 		colorOut = min(texel*texel1*colorOut, 1.0f);
 	} else if (text_mode == 0) {
 		colorOut = min(colorOut + mat.ambient, 1.0f);
-	}
+	} 
 
-	if (fog_toggled) {
+	if (fog_toggled && fogged_frag) {
 		vec3 final_color = mix(fogColor, vec3(colorOut), fogAmount );
 		colorOut = vec4(final_color, 1);
+		fogged_frag = true;
 	}
 }

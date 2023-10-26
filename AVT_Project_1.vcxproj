@@ -176,6 +176,7 @@
     <ClInclude Include="geometry.h" />
     <ClInclude Include="House.h" />
     <ClInclude Include="Lamppost.h" />
+    <ClInclude Include="LensFlare.h" />
     <ClInclude Include="meshFromAssimp.h" />
     <ClInclude Include="Particle.h" />
     <ClInclude Include="Present.h" />

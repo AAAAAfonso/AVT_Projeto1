@@ -56,6 +56,7 @@
 #include "Statue.h"
 #include "Particle.h"
 #include "Present.h"
+#include "LensFlare.h"
 
 
 
@@ -80,7 +81,6 @@ bool renderFlare = true;
 //Vector with meshes
 struct MyMesh rearViewModel;
 vector<struct MyMesh> myMeshes;
-MyMesh FlareMesh;
 
 //External array storage defined in AVTmathLib.cpp
 
@@ -125,7 +125,6 @@ float alpha = 39.0f, beta = 51.0f;
 float r = 15.0f;
 
 //Flare effect
-FLARE_DEF AVTflare;
 float lightScreenPos[3];  //Position of the light in Window Coordinates
 GLuint FlareTextureArray[5];
 
@@ -152,6 +151,7 @@ struct keyboard_key_tracking uTrack = { false, false, false, false, false };
 // Create objects
 Terrain* terrain;
 Sleigh* sleigh;
+LensFlare* lensflare;
 vector<Lamppost> lampposts;
 vector<SnowBall> snowballs;
 vector<House> houses;
@@ -160,14 +160,6 @@ Statue* statue;
 vector<Particle> particles;
 Present* present;
 
-
-inline double clamp(const double x, const double min, const double max) {
-	return (x < min ? min : (x > max ? max : x));
-}
-
-inline int clampi(const int x, const int min, const int max) {
-	return (x < min ? min : (x > max ? max : x));
-}
 
 
 bool paused = false;
@@ -293,91 +285,7 @@ void changeSize(int w, int h) {
 // Render stufff
 //
 
-void render_flare(FLARE_DEF* flare, int lx, int ly, int* m_viewport) {  //lx, ly represent the projected position of light on viewport
 
-	int     dx, dy;          // Screen coordinates of "destination"
-	int     px, py;          // Screen coordinates of flare element
-	int		cx, cy;
-	float    maxflaredist, flaredist, flaremaxsize, flarescale, scaleDistance;
-	int     width, height, alpha;    // Piece parameters;
-	int     i;
-	float	diffuse[4];
-
-	GLint loc;
-
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	int screenMaxCoordX = m_viewport[0] + m_viewport[2] - 1;
-	int screenMaxCoordY = m_viewport[1] + m_viewport[3] - 1;
-
-	//viewport center
-	cx = m_viewport[0] + (int)(0.5f * (float)m_viewport[2]) - 1;
-	cy = m_viewport[1] + (int)(0.5f * (float)m_viewport[3]) - 1;
-
-	// Compute how far off-center the flare source is.
-	maxflaredist = sqrt(cx * cx + cy * cy);
-	flaredist = sqrt((lx - cx) * (lx - cx) + (ly - cy) * (ly - cy));
-	scaleDistance = (maxflaredist - flaredist) / maxflaredist;
-	flaremaxsize = (int)(m_viewport[2] * flare->fMaxSize);
-	flarescale = (int)(m_viewport[2] * flare->fScale);
-
-	// Destination is opposite side of centre from source
-	dx = clampi(cx + (cx - lx), m_viewport[0], screenMaxCoordX);
-	dy = clampi(cy + (cy - ly), m_viewport[1], screenMaxCoordY);
-
-	// Render each element. To be used Texture Unit 0
-
-	glUniform1i(textMode_uniformId, 3); // draw modulated textured particles
-	glUniform1i(tex_loc, 0);  //use TU 0
-
-	for (i = 0; i < flare->nPieces; ++i)
-	{
-		// Position is interpolated along line between start and destination.
-		px = (int)((1.0f - flare->element[i].fDistance) * lx + flare->element[i].fDistance * dx);
-		py = (int)((1.0f - flare->element[i].fDistance) * ly + flare->element[i].fDistance * dy);
-		px = clampi(px, m_viewport[0], screenMaxCoordX);
-		py = clampi(py, m_viewport[1], screenMaxCoordY);
-
-		// Piece size are 0 to 1; flare size is proportion of screen width; scale by flaredist/maxflaredist.
-		width = (int)(scaleDistance * flarescale * flare->element[i].fSize);
-
-		// Width gets clamped, to allows the off-axis flaresto keep a good size without letting the elements get big when centered.
-		if (width > flaremaxsize)  width = flaremaxsize;
-
-		height = (int)((float)m_viewport[3] / (float)m_viewport[2] * (float)width);
-		memcpy(diffuse, flare->element[i].matDiffuse, 4 * sizeof(float));
-		diffuse[3] *= scaleDistance;   //scale the alpha channel
-
-		if (width > 1)
-		{
-			// send the material - diffuse color modulated with texture
-			loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
-			glUniform4fv(loc, 1, diffuse);
-
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, FlareTextureArray[flare->element[i].textureId]);
-			pushMatrix(MODEL);
-			translate(MODEL, (float)(px - width * 0.0f), (float)(py - height * 0.0f), 0.0f);
-			scale(MODEL, (float)width, (float)height, 1);
-			computeDerivedMatrix(PROJ_VIEW_MODEL);
-			glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-			glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-			computeNormalMatrix3x3();
-			glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-			glBindVertexArray(FlareMesh.vao);
-			glDrawElements(FlareMesh.type, FlareMesh.numIndexes, GL_UNSIGNED_INT, 0);
-			glBindVertexArray(0);
-			popMatrix(MODEL);
-		}
-	}
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
-	glDisable(GL_BLEND);
-}
 
 void renderRearView(void) {
 	// load identity matrices
@@ -552,7 +460,7 @@ void renderScene(void) {
 
 	float* pos = lampposts[0].get_pointlight_pos();
 	if (!project(pos, lightScreenPos, m_viewport))
-		printf("Error in getting projected light in screen\n");  //Calculate the window Coordinates of the light position: the projected position of light on viewport
+		printf("Error in getting projected light in screen\n");  //Calculate the FIX THIS window Coordinates of the light position: the projected position of light on viewport
 	flarePos[0] = clampi((int)lightScreenPos[0], m_viewport[0], m_viewport[0] + m_viewport[2] - 1);
 	flarePos[1] = clampi((int)lightScreenPos[1], m_viewport[1], m_viewport[1] + m_viewport[3] - 1);
 	
@@ -567,8 +475,7 @@ void renderScene(void) {
 	pushMatrix(VIEW);
 	loadIdentity(VIEW);
 	ortho(m_viewport[0], m_viewport[0] + m_viewport[2] - 1, m_viewport[1], m_viewport[1] + m_viewport[3] - 1, -1, 1);
-	//if(renderFlare)
-		//render_flare(&AVTflare, flarePos[0], flarePos[1], m_viewport);
+	lensflare->render(rInfo, flarePos[0], flarePos[1], m_viewport);
 	if (paused)
 		RenderText(shaderText, "PAUSED", m_viewport[2] / 2.0f - 100.0f, m_viewport[3] / 2.0f + 25.0f, 1.0f, 1.0f, 1.0f, 1.01f);
 	//RenderText(shaderText, "LIVES: ", 25.0f, m_viewport[3] - 50.0f, 1.0f, 0.5f, 0.8f, 0.2f);
@@ -822,6 +729,7 @@ GLuint setupShaders() {
 	tex_loc3 = glGetUniformLocation(shader.getProgramIndex(), "texmap3");
 	textMode_uniformId = glGetUniformLocation(shader.getProgramIndex(), "text_mode");
 
+
 	dirLPos_uniformId = glGetUniformLocation(shader.getProgramIndex(), "d_l_pos");
 	dirLToggled_uniformId = glGetUniformLocation(shader.getProgramIndex(), "dir_l_toggled");
 
@@ -884,17 +792,10 @@ void init()
 	Texture2D_Loader(TextureArray, "texmap2.png", 2);
 	Texture2D_Loader(TextureArray, "texmap3.png", 3);
 
-	//Flare elements textures
-	glGenTextures(5, FlareTextureArray);
-	Texture2D_Loader(FlareTextureArray, "crcl.tga", 0);
-	Texture2D_Loader(FlareTextureArray, "flar.tga", 1);
-	Texture2D_Loader(FlareTextureArray, "hxgn.tga", 2);
-	Texture2D_Loader(FlareTextureArray, "ring.tga", 3);
-	Texture2D_Loader(FlareTextureArray, "sun.tga", 4);
-
 	/// Initialization of freetype library with font_name file
 	freeType_init(font_name);
 
+	lensflare = new LensFlare(1.0f, "./flare.txt"); 
 	terrain = new Terrain(25.0f, 25.0f);
 	sleigh = new Sleigh(0.0f, 0.0f, 0.0f, 0.0f);
 	for (int i = 0; i < 360; i += 360 / 12) {
@@ -903,7 +804,7 @@ void init()
 	for (int i = 0; i < 6; i++) {
 		lampposts.push_back(Lamppost(5.0f * ((i % 3) - 1), 2.5f * ((i / 3) * 2 - 1)));
 	}
-	for (int i = 0; i < 8; i++) {
+	for (int i = 0; i < 1; i++) {
 		houses.push_back(House(5.0f * ((i % 4) - 1) - 2.5f, 4.0f * ((i / 4) * 2 - 1)));
 	}
 	sleigh->get_direction();
@@ -922,8 +823,6 @@ void init()
 		particles.push_back(Particle(x, y, z, 0.0f, s_y, 0.0f, rotation, time));
 	}
 	present = new Present((rand() % 200) / 10 - 10.0f, (rand() % 200) / 10 - 10.0f);
-
-	FlareMesh = createQuad(1, 1);
 
 	uInfo.snowballs = &snowballs;
 	uInfo.houses = &houses;
@@ -952,7 +851,7 @@ void init()
 		0, 1, 0, 0));
 
 	//Load flare from file
-	loadFlareFile(&AVTflare, "flare.txt");
+	//loadFlareFile(&AVTflare, "flare.txt");
 
 	// some GL settings
 	glEnable(GL_DEPTH_TEST);
@@ -1028,58 +927,4 @@ int main(int argc, char** argv) {
 	return(0);
 }
 
-unsigned int getTextureId(char* name) {
-	int i;
-
-	for (i = 0; i < NTEXTURES; ++i)
-	{
-		if (strncmp(name, flareTextureNames[i], strlen(name)) == 0)
-			return i;
-	}
-	return -1;
-}
-
-void    loadFlareFile(FLARE_DEF* flare, char* filename)
-{
-	int     n = 0;
-	FILE* f;
-	char    buf[256];
-	int fields;
-
-	memset(flare, 0, sizeof(FLARE_DEF));
-
-	f = fopen(filename, "r");
-	if (f)
-	{
-		fgets(buf, sizeof(buf), f);
-		sscanf(buf, "%f %f", &flare->fScale, &flare->fMaxSize);
-
-		while (!feof(f))
-		{
-			char            name[8] = { '\0', };
-			double          dDist = 0.0, dSize = 0.0;
-			float			color[4];
-			int				id;
-
-			fgets(buf, sizeof(buf), f);
-			fields = sscanf(buf, "%4s %lf %lf ( %f %f %f %f )", name, &dDist, &dSize, &color[3], &color[0], &color[1], &color[2]);
-			if (fields == 7)
-			{
-				for (int i = 0; i < 4; ++i) color[i] = clamp(color[i] / 255.0f, 0.0f, 1.0f);
-				id = getTextureId(name);
-				if (id < 0) printf("Texture name not recognized\n");
-				else
-					flare->element[n].textureId = id;
-				flare->element[n].fDistance = (float)dDist;
-				flare->element[n].fSize = (float)dSize;
-				memcpy(flare->element[n].matDiffuse, color, 4 * sizeof(float));
-				++n;
-			}
-		}
-
-		flare->nPieces = n;
-		fclose(f);
-	}
-	else printf("Flare file opening error\n");
-}
 

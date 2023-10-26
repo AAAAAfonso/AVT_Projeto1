@@ -116,7 +116,7 @@ bool fogToggled = true;
 GLint fogToggled_uniformId;
 
 GLint textMode_uniformId;
-GLuint TextureArray[5];
+GLuint TextureArray[7];
 
 // Mouse Tracking Variables
 int startX, startY, tracking = 0;
@@ -860,13 +860,14 @@ void init()
 
 	//Texture Object definition
 
-	glGenTextures(6, TextureArray);
+	glGenTextures(7, TextureArray);
 	Texture2D_Loader(TextureArray, "texmap.jpg", 0);
 	Texture2D_Loader(TextureArray, "texmap1.jpg", 1);
 	Texture2D_Loader(TextureArray, "texmap2.png", 2);
 	Texture2D_Loader(TextureArray, "texmap3.png", 3);
 	Texture2D_Loader(TextureArray, "bumpmap.jpg", 4);
 	Texture2D_Loader(TextureArray, "texmap4.jpg", 5);
+	Texture2D_Loader(TextureArray, "texmap5.jpg", 6);
 
 	//Flare elements textures
 	glGenTextures(5, FlareTextureArray);

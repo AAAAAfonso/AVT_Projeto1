@@ -38,6 +38,7 @@ in Data {
 	vec3 spotLightDir[2];
 	vec3 spotLightSpot;
 	vec2 tex_coord;
+	vec2 sphere_coord;
 } DataIn;
 
 void main() {
@@ -104,7 +105,11 @@ void main() {
 		}
 	}
 	
-	if (text_mode == 3) {
+	if (text_mode == 6) {    //Environmental sphere mapping
+		vec4 texel = texture(texmap, DataIn.sphere_coord);
+		vec4 aux_color = mix(texel, colorOut, 0.3);
+	    colorOut = vec4(aux_color.rgb, colorOut.a);
+	} else if (text_mode == 3) {
 		vec4 texel;
 		texel = texture(texmap, DataIn.tex_coord);
 		colorOut = min(texel*colorOut, 1.0f);
@@ -124,6 +129,6 @@ void main() {
 
 	if (fog_toggled) {
 		vec3 final_color = mix(fogColor, vec3(colorOut), fogAmount );
-		colorOut = vec4(final_color, 1);
+		colorOut = vec4(final_color, min(colorOut.a*2.0f, 1.0f));
 	}
 }

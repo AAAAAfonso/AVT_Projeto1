@@ -32,6 +32,7 @@ out Data {
 	vec3 spotLightDir[2];
 	vec3 spotLightSpot;
 	vec2 tex_coord;
+	vec2 sphere_coord;
 } DataOut;
 
 out vec4 pos;
@@ -131,5 +132,12 @@ void main () {
 
 	DataOut.tex_coord = texCoord.st;
 
-	gl_Position = m_pvm * position;	
+	gl_Position = m_pvm * position;
+
+	if(text_mode == 6) {
+		vec3 r = reflect(-DataOut.eye, DataOut.normal);
+		float m = 2.0 * sqrt( r.x*r.x + r.y*r.y + (r.z+1.0)*(r.z+1.0));
+		DataOut.sphere_coord.s = r.x/m + 0.5;
+		DataOut.sphere_coord.t = r.y/m + 0.5; 
+	}
 }

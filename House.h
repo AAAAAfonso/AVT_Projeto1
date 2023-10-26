@@ -3,25 +3,53 @@
 #include <render_info.h>
 #include <AVTmathLib.h>
 #include <random>
+#include "meshFromAssimp.h"
+#include "assimp/scene.h"
+#include <string>
+
+using namespace std;
 
 extern float mCompMatrix[COUNT_COMPUTED_MATRICES][16];
 extern float mNormal3x3[9];
+std::string filepath1 = "./LogHutv1.1/LogHutv1.1.fbx";
+std::string model_dirHouse = "./LogHutv1.1/";
+extern float scaleFactor;
 
-class House{
+class House {
 private:
+	GLint normalMap_loc;
+	GLint specularMap_loc;
+	GLint diffMapCount_loc;
+	const aiScene* sceneHouse;
+
+	std::vector<struct MyMesh> myMeshes;
+
 	float x, z;
-	
+
 	bool colided = false;
 	const float timer = 0.5f;
 	const float speed = 1.0f;
 	float currentTime = 0.0f;
 	float dir[2];
-
+	float ScaleFactorHouse;
 	MyMesh house;
 	MyMesh rooftop;
 
 	void createMesh() {
-		float house_amb[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
+		/*float amb[4] = {0.15f, 0.1f, 0.06f, 1.0f};
+		float diff[4] = { 0.2f, 0.15f, 0.09f, 1.0f };
+		float spec[4] = { 0.03f, 0.02f, 0.01f, 1.0f };
+		float emissive[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		float shininess = 100.0f;
+		int texcount = 0;*/
+
+
+		if (!Import3DFromFile(&(this->sceneHouse), filepath1))
+			return;
+		this->ScaleFactorHouse = 0.002;
+		myMeshes = createMeshFromAssimp(this->sceneHouse, model_dirHouse);
+
+		/*float house_amb[4] = {0.2f, 0.2f, 0.2f, 1.0f};
 		float house_diff[4] = { 0.3f, 0.3f, 0.3f, 1.0f };
 		float house_spec[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 		float house_emissive[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -49,80 +77,132 @@ private:
 		memcpy(rooftop.mat.specular, rooftop_spec, 4 * sizeof(float));
 		memcpy(rooftop.mat.emissive, rooftop_emissive, 4 * sizeof(float));
 		rooftop.mat.shininess = rooftop_shininess;
-		rooftop.mat.texCount = rooftop_texcount;
+		rooftop.mat.texCount = rooftop_texcount;*/
 	}
 
 public:
 	float aabb_max[4];
 	float aabb_min[4];
 
-	House( float x, float z) {
+	House(float x, float z) {
 
 		this->x = x; this->z = z;
 
-		aabb_max[0] = this->x + 1.0f; aabb_max[1] = 2.5f; aabb_max[2] = this->z + 1.0f;
+		aabb_max[0] = this->x + 1.0f; aabb_max[1] = 2.25f; aabb_max[2] = this->z + 1.0f;
 		aabb_min[0] = this->x - 1.0f; aabb_min[1] = 0.0f; aabb_min[2] = this->z - 1.0f;
+		if(this->myMeshes.size() == 0)
+			createMesh();
+	}
 
-		createMesh();
+	void aiRecursive_render(struct render_info rInfo, const aiScene* sc, const aiNode* nd)
+	{
+		GLint loc;
+
+		// Get node transformation matrix
+		aiMatrix4x4 m = nd->mTransformation;
+		// OpenGL matrices are column major
+		m.Transpose();
+
+		// save model matrix and apply node transformation
+		pushMatrix(MODEL);
+
+		float aux[16];
+		memcpy(aux, &m, sizeof(float) * 16);
+		multMatrix(MODEL, aux);
+
+
+		// draw all meshes assigned to this node
+		for (unsigned int n = 0; n < nd->mNumMeshes; ++n) {
+
+
+			// send the material
+			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.ambient");
+			glUniform4fv(loc, 1, myMeshes[nd->mMeshes[n]].mat.ambient);
+			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.diffuse");
+			glUniform4fv(loc, 1, myMeshes[nd->mMeshes[n]].mat.diffuse);
+			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.specular");
+			glUniform4fv(loc, 1, myMeshes[nd->mMeshes[n]].mat.specular);
+			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.emissive");
+			glUniform4fv(loc, 1, myMeshes[nd->mMeshes[n]].mat.emissive);
+			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
+			glUniform1f(loc, myMeshes[nd->mMeshes[n]].mat.shininess);
+			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.texCount");
+			glUniform1i(loc, myMeshes[nd->mMeshes[n]].mat.texCount);
+
+			unsigned int  diffMapCount = 0;  //read 2 diffuse textures
+
+			//devido ao fragment shader suporta 2 texturas difusas simultaneas, 1 especular e 1 normal map
+
+			glUniform1i(normalMap_loc, false);   //GLSL normalMap variable initialized to 0
+			glUniform1i(specularMap_loc, false);
+			glUniform1ui(diffMapCount_loc, 0);
+
+			if (myMeshes[nd->mMeshes[n]].mat.texCount != 0)
+				for (unsigned int i = 0; i < myMeshes[nd->mMeshes[n]].mat.texCount; ++i) {
+					if (myMeshes[nd->mMeshes[n]].texTypes[i] == DIFFUSE) {
+						if (diffMapCount == 0) {
+							diffMapCount++;
+							loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitDiff");
+							glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);
+							glUniform1ui(diffMapCount_loc, diffMapCount);
+						}
+						else if (diffMapCount == 1) {
+							diffMapCount++;
+							loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitDiff1");
+							glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);
+							glUniform1ui(diffMapCount_loc, diffMapCount);
+						}
+						else printf("Only supports a Material with a maximum of 2 diffuse textures\n");
+					}
+					else if (myMeshes[nd->mMeshes[n]].texTypes[i] == SPECULAR) {
+						loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitSpec");
+						glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);
+						glUniform1i(specularMap_loc, true);
+					}
+					else if (myMeshes[nd->mMeshes[n]].texTypes[i] == NORMALS) { //Normal map
+						loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitNormalMap");
+						/*if (normalMapKey)
+							glUniform1i(normalMap_loc, normalMapKey);*/
+						glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);
+
+					}
+					else printf("Texture Map not supported\n");
+				}
+
+			// send matrices to OGL
+			computeDerivedMatrix(PROJ_VIEW_MODEL);
+			glUniformMatrix4fv(rInfo.vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+			glUniformMatrix4fv(rInfo.pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+			computeNormalMatrix3x3();
+			glUniformMatrix3fv(rInfo.normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+			// bind VAO
+			glBindVertexArray(myMeshes[nd->mMeshes[n]].vao);
+
+			if (!rInfo.shader.isProgramValid()) {
+				printf("Program Not Valid!\n");
+				exit(1);
+			}
+			// draw
+			glDrawElements(myMeshes[nd->mMeshes[n]].type, myMeshes[nd->mMeshes[n]].numIndexes, GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
+		}
+
+		// draw all children
+		for (unsigned int n = 0; n < nd->mNumChildren; ++n) {
+			this->aiRecursive_render(rInfo, sc, nd->mChildren[n]);
+		}
+		popMatrix(MODEL);
 	}
 
 	void render(struct render_info rInfo) {
-			GLint loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.ambient");
-			glUniform4fv(loc, 1, house.mat.ambient);
-			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.diffuse");
-			glUniform4fv(loc, 1, house.mat.diffuse);
-			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.specular");
-			glUniform4fv(loc, 1, house.mat.specular);
-			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
-			glUniform1f(loc, house.mat.shininess);
+		pushMatrix(MODEL);
 
-			glUniform1i(rInfo.textMode_uniformId, 0);
 
-			pushMatrix(MODEL);
-			translate(MODEL, this->x - 1.0f, 0.0f, this->z - 1.0f);
-			scale(MODEL, 2.0f, 1.5f, 2.0f);
-
-			// send matrices to OGL
-			computeDerivedMatrix(PROJ_VIEW_MODEL);
-			glUniformMatrix4fv(rInfo.vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-			glUniformMatrix4fv(rInfo.pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-			computeNormalMatrix3x3();
-			glUniformMatrix3fv(rInfo.normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-			// Render mesh
-			glBindVertexArray(house.vao);
-
-			glDrawElements(house.type, house.numIndexes, GL_UNSIGNED_INT, 0);
-			glBindVertexArray(0);
-
-			popMatrix(MODEL);
-
-			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.ambient");
-			glUniform4fv(loc, 1, rooftop.mat.ambient);
-			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.diffuse");
-			glUniform4fv(loc, 1, rooftop.mat.diffuse);
-			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.specular");
-			glUniform4fv(loc, 1, rooftop.mat.specular);
-			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
-			glUniform1f(loc, rooftop.mat.shininess);
-
-			pushMatrix(MODEL);
-			translate(MODEL,  this->x, 1.5f, this->z);
-			rotate(MODEL, -45, 0.0f, 1.0f, 0.0f);
-			// send matrices to OGL
-			computeDerivedMatrix(PROJ_VIEW_MODEL);
-			glUniformMatrix4fv(rInfo.vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-			glUniformMatrix4fv(rInfo.pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-			computeNormalMatrix3x3();
-			glUniformMatrix3fv(rInfo.normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-			// Render mesh
-			glBindVertexArray(rooftop.vao);
-
-			glDrawElements(rooftop.type, rooftop.numIndexes, GL_UNSIGNED_INT, 0);
-			glBindVertexArray(0);
-
-			popMatrix(MODEL);
+		translate(MODEL, this->x, 0, this->z);
+		scale(MODEL, this->ScaleFactorHouse, this->ScaleFactorHouse, this->ScaleFactorHouse);
+		aiRecursive_render(rInfo, this->sceneHouse, this->sceneHouse->mRootNode);
+		popMatrix(MODEL);
 	}
 
 

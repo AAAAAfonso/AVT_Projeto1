@@ -11,8 +11,7 @@ using namespace std;
 extern float mCompMatrix[COUNT_COMPUTED_MATRICES][16];
 extern float mNormal3x3[9];
 std::string filepath = "./slitta_babbo/SLITTABABBO.obj";
-extern Assimp::Importer importer;
-extern const aiScene* scene;
+std::string dirpathSleigh = "./slitta_babbo/";
 
 extern float scaleFactor;
 
@@ -20,41 +19,30 @@ extern float scaleFactor;
 
 class Sleigh {
 private:
-	GLint normalMap_loc;
-	GLint specularMap_loc;
-	GLint diffMapCount_loc;
+	const aiScene* sceneSleigh = NULL;
+
+	GLint normalMap_loc2;
+	GLint specularMap_loc2;
+	GLint diffMapCount_loc2;
 	std::vector<struct MyMesh> myMeshes;
 
 	float pos[4];
 	float dir[4];
 	float hAngle;
+	float scaleFactorSleigh;
 	float vAngle = 0.0f;
 	float speed = 0.0f;
 	int lives = 5;
 	int points = 0;
 
-	MyMesh board;
-
 	void createMesh() {
-		float amb[4] = { 0.15f, 0.1f, 0.06f, 1.0f };
-		float diff[4] = { 0.2f, 0.15f, 0.09f, 1.0f };
-		float spec[4] = { 0.03f, 0.02f, 0.01f, 1.0f };
-		float emissive[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		float shininess = 100.0f;
-		int texcount = 0;
-
+	
 			
-		if (!Import3DFromFile(filepath))
+		if (!Import3DFromFile( &(this->sceneSleigh), filepath))
 			return;
+		this->scaleFactorSleigh = scaleFactor;
+	 	myMeshes = createMeshFromAssimp(this->sceneSleigh, dirpathSleigh);
 
-	 	myMeshes = createMeshFromAssimp(scene, filepath);
-
-		memcpy(board.mat.ambient, amb, 4 * sizeof(float));
-		memcpy(board.mat.diffuse, diff, 4 * sizeof(float));
-		memcpy(board.mat.specular, spec, 4 * sizeof(float));
-		memcpy(board.mat.emissive, emissive, 4 * sizeof(float));
-		board.mat.shininess = shininess;
-		board.mat.texCount = texcount;
 	}
 
 public:
@@ -115,13 +103,13 @@ public:
 				(*(uInfo->houses))[i].aabb_max[0] >= this->aabb_min[0] &&
 				(*(uInfo->houses))[i].aabb_min[1] <= this->aabb_max[1] &&
 				(*(uInfo->houses))[i].aabb_max[1] >= this->aabb_min[1] &&
-				(*(uInfo->houses))[i].aabb_min[2] <= this->aabb_max[2] &&
+		 		(*(uInfo->houses))[i].aabb_min[2] <= this->aabb_max[2] &&
 				(*(uInfo->houses))[i].aabb_max[2] >= this->aabb_min[2]) {
 				(*(uInfo->houses))[i].setColided(dir);
 				col_detected = true;
 			}
 		}
-
+		
 		for (unsigned int i = 0; i < uInfo->trees->size(); i++) {
 			if ((*(uInfo->trees))[i].aabb_min[0] <= this->aabb_max[0] &&
 				(*(uInfo->trees))[i].aabb_max[0] >= this->aabb_min[0] &&
@@ -164,6 +152,7 @@ public:
 
 		//float small_dif = (angle_0 - angle_x) *cos(this->hAngle * 3.14f / 180);
 
+		//TO DO
 		this->aabb_max[0] = this->pos[0] + (0.3f * std::fabs(cos(this->hAngle * 3.14f / 180)) + 0.5f * std::fabs(sin(this->hAngle * 3.14f / 180))) * cos(this->vAngle * 3.14f / 180)
 										 + std::fmax(0.6 * sin(this->vAngle * 3.14 / 180) * sin(this->hAngle * 3.14 / 180), 0);
 		
@@ -314,9 +303,9 @@ public:
 
 			//devido ao fragment shader suporta 2 texturas difusas simultaneas, 1 especular e 1 normal map
 
-			glUniform1i(normalMap_loc, false);   //GLSL normalMap variable initialized to 0
-			glUniform1i(specularMap_loc, false);
-			glUniform1ui(diffMapCount_loc, 0);
+			glUniform1i(normalMap_loc2, false);   //GLSL normalMap variable initialized to 0
+			glUniform1i(specularMap_loc2, false);
+			glUniform1ui(diffMapCount_loc2, 0);
 
 			if (myMeshes[nd->mMeshes[n]].mat.texCount != 0)
 				for (unsigned int i = 0; i < myMeshes[nd->mMeshes[n]].mat.texCount; ++i) {
@@ -325,20 +314,20 @@ public:
 							diffMapCount++;
 							loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitDiff");
 							glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);
-							glUniform1ui(diffMapCount_loc, diffMapCount);
+							glUniform1ui(diffMapCount_loc2, diffMapCount);
 						}
 						else if (diffMapCount == 1) {
 							diffMapCount++;
 							loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitDiff1");
 							glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);
-							glUniform1ui(diffMapCount_loc, diffMapCount);
+							glUniform1ui(diffMapCount_loc2, diffMapCount);
 						}
 						else printf("Only supports a Material with a maximum of 2 diffuse textures\n");
 					}
 					else if (myMeshes[nd->mMeshes[n]].texTypes[i] == SPECULAR) {
 						loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitSpec");
 						glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);
-						glUniform1i(specularMap_loc, true);
+						glUniform1i(specularMap_loc2, true);
 					}
 					else if (myMeshes[nd->mMeshes[n]].texTypes[i] == NORMALS) { //Normal map
 						loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitNormalMap");
@@ -383,8 +372,8 @@ public:
 		translate(MODEL, pos[0], pos[1], pos[2]);
 		rotate(MODEL, hAngle - 90, 0.0f, 1.0f, 0.0f);
 		rotate(MODEL, vAngle, 0.0, 0.0f, -1.0f);
-		scale(MODEL, scaleFactor, scaleFactor, scaleFactor);
-		aiRecursive_render(rInfo, scene, scene->mRootNode);
+		scale(MODEL, this->scaleFactorSleigh, this->scaleFactorSleigh, this->scaleFactorSleigh);
+		aiRecursive_render(rInfo, this->sceneSleigh, this->sceneSleigh->mRootNode);
 		popMatrix(MODEL);
 	}
 };

@@ -103,11 +103,11 @@ void main() {
 	
 	if (text_mode == 3) {
 		vec4 texel;
-		texel = texture(texmap3, DataIn.tex_coord);
+		texel = texture(texmap, DataIn.tex_coord);
 		colorOut = min(texel*colorOut, 1.0f);
 	} else if (text_mode == 2) {
 		vec4 texel;
-		texel = texture(texmap2, DataIn.tex_coord);
+		texel = texture(texmap, DataIn.tex_coord);
 		if (texel.a == 0) discard;
 		colorOut = min(texel*colorOut, 1.0f);
 	} else if (text_mode == 1) {

@@ -9,6 +9,7 @@ struct render_info {
 	GLint pvm_uniformId;
 	GLint normal_uniformId;
 	GLint textMode_uniformId;
+	GLuint *TextureArray;
 };
 
 #endif

@@ -60,7 +60,7 @@ void main () {
 	s_l1 = vec3(s_l_pos1 - pos);
 	s_d = vec3(-s_l_spot);
 
-	if (a == 4) {
+	if (text_mode == 4) {
 		t = normalize(m_normal * tangent.xyz);  
 		b = tangent.w * cross(n,t);
 	

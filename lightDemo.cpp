@@ -426,23 +426,7 @@ void renderRearView(void) {
 
 	glUniform1i(fogToggled_uniformId, fogToggled);
 
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, TextureArray[2]);
-	glActiveTexture(GL_TEXTURE4);
-	glBindTexture(GL_TEXTURE_2D, TextureArray[3]);
-	glActiveTexture(GL_TEXTURE5);
-	glBindTexture(GL_TEXTURE_2D, TextureArray[4]);
-	glUniform1i(tex_loc, 1);
-	glUniform1i(tex_loc1, 2);
-	glUniform1i(tex_loc2, 3);
-	glUniform1i(tex_loc3, 4);
-	glUniform1i(tex_loc3, 5);
-
-	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId };
+	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray };
 
 	// draw the tori where the stencil is not 1 
 	glStencilFunc(GL_EQUAL, 0x1, 0x1);
@@ -515,23 +499,7 @@ void renderScene(void) {
 
 	glUniform1i(fogToggled_uniformId, fogToggled);
 
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, TextureArray[2]);
-		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_2D, TextureArray[3]);
-		glActiveTexture(GL_TEXTURE5);
-		glBindTexture(GL_TEXTURE_2D, TextureArray[4]);
-		glUniform1i(tex_loc, 1);
-		glUniform1i(tex_loc1, 2);
-		glUniform1i(tex_loc2, 3);
-		glUniform1i(tex_loc3, 4);
-		glUniform1i(tex_loc3, 5);
-
-	struct render_info rInfo = {shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId};
+	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray };
 
 	// draw the tori where the stencil is not 1 
 	if (active_camera == 2) glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
@@ -578,8 +546,8 @@ void renderScene(void) {
 	ortho(m_viewport[0], m_viewport[0] + m_viewport[2] - 1, m_viewport[1], m_viewport[1] + m_viewport[3] - 1, -1, 1);
 	//if(renderFlare)
 		//render_flare(&AVTflare, flarePos[0], flarePos[1], m_viewport);
-	if (paused)
-		RenderText(shaderText, "PAUSED", m_viewport[2] / 2.0f - 100.0f, m_viewport[3] / 2.0f + 25.0f, 1.0f, 1.0f, 1.0f, 1.01f);
+	//if (paused)
+	//	RenderText(shaderText, "PAUSED", m_viewport[2] / 2.0f - 100.0f, m_viewport[3] / 2.0f + 25.0f, 1.0f, 1.0f, 1.0f, 1.01f);
 	//RenderText(shaderText, "LIVES: ", 25.0f, m_viewport[3] - 50.0f, 1.0f, 0.5f, 0.8f, 0.2f);
 	//RenderText(shaderText, to_string(sleigh->get_lives()), 180.0f, m_viewport[3] - 50.0f, 1.0f, 0.5f, 0.8f, 0.2f);
 	//RenderText(shaderText, "POINTS: ", 25.0f, m_viewport[3] - 90.0f, 1.0f, 0.5f, 0.8f, 0.2f);
@@ -893,7 +861,7 @@ void init()
 	Texture2D_Loader(TextureArray, "texmap1.jpg", 1);
 	Texture2D_Loader(TextureArray, "texmap2.png", 2);
 	Texture2D_Loader(TextureArray, "texmap3.png", 3);
-	Texture2D_Loader(TextureArray, "bumpmap.png", 4);
+	Texture2D_Loader(TextureArray, "bumpmap.jpg", 4);
 
 	//Flare elements textures
 	glGenTextures(5, FlareTextureArray);

@@ -6,6 +6,7 @@ uniform bool dir_l_toggled;
 uniform bool point_l_toggled;
 uniform bool spot_l_toggled;
 uniform bool fog_toggled;
+uniform bool shadowMode;
 
 uniform float spot_l_threshold;
 
@@ -46,6 +47,10 @@ void main() {
 	vec4 spec = vec4(0.0);
 
 	vec3 n;
+	if(shadowMode){
+		colorOut = vec4(0.5, 0.5, 0.5, 1.0);
+		return;
+	}
 	if (text_mode == 5) {
 		colorOut = vec4(texture(texmap, DataIn.tex_coord).rgb, 1.0f);
 		return;

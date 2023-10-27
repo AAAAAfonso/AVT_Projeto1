@@ -116,7 +116,10 @@ bool fogToggled = true;
 GLint fogToggled_uniformId;
 
 GLint textMode_uniformId;
+GLint shadowMode_uniformId;
 GLuint TextureArray[8];
+GLfloat plano_chao[4] = { 0,1,0,0 };
+
 
 // Mouse Tracking Variables
 int startX, startY, tracking = 0;
@@ -161,6 +164,7 @@ vector<Particle> particles;
 Present* present;
 Skybox* skybox;
 LensFlare* lensflare;
+MyMesh mirror;
 
 
 bool paused = false;
@@ -286,7 +290,34 @@ void changeSize(int w, int h) {
 //
 // Render stufff
 //
+/*static void draw_mirror(void)  //especular ground with quad
+{
+	GLint loc;
+	//objId = 2;   specular mirror
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+	glUniform4fv(loc, 1, mirror.mat.ambient);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+	glUniform4fv(loc, 1, mirror.mat.diffuse);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+	glUniform4fv(loc, 1, mirror.mat.specular);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+	glUniform1f(loc, mirror.mat.shininess);
+	pushMatrix(MODEL);
+	translate(MODEL, 5.0f, 2.5f, 0.0f);
 
+	rotate(MODEL, 90.0f, 0, 1.0, 0);
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	glUniform1i(textMode_uniformId, 1);
+	glBindVertexArray(mirror.vao);
+	glDrawElements(mirror.type, mirror.numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+	popMatrix(MODEL);
+}*/
 
 
 void renderRearView(void) {
@@ -354,11 +385,140 @@ void renderRearView(void) {
 	statue->render(rInfo);
 }
 
+
+
+void renderShadows(void) {
+	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray, cams[active_camera].get_xyzpos() };
+	float mat[16];
+	float res[4];
+	glEnable(GL_DEPTH_TEST);
+	float* lightPos = lampposts[3].get_pointlight_pos();
+	lightPos[1] -= 0.5;
+	if (cams[active_camera].get_pos(1) > 0 && pointLightToggled) {
+		//SHADOWS
+		glEnable(GL_STENCIL_TEST);        // Escrever 1 no stencil buffer onde se for desenhar a reflexão e a sombra
+		glStencilFunc(GL_NEVER, 0x1, 0x1);
+		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+
+		terrain->render(rInfo);
+		
+		glUniform1i(shadowMode_uniformId, 0);  //iluminação phong
+
+		// Desenhar apenas onde o stencil buffer esta a 1
+		glStencilFunc(GL_EQUAL, 0x1, 0x1);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+		// Render the reflected geometry REFLEXO TO DO
+		/*lightPos[1] *= (-1.0f);  //mirror the position of light
+		multMatrixPoint(VIEW, lightPos, res);
+
+		glUniform4fv(pointLPos_uniformIds[3], 1, res);
+		pushMatrix(MODEL);
+		scale(MODEL, 1.0f, -1.0f, 1.0f);
+		glCullFace(GL_FRONT);
+		sleigh->render(rInfo);
+		for (int i = 0; i < lampposts.size(); i++) lampposts[i].render(rInfo);
+		for (int i = 0; i < snowballs.size(); i++) snowballs[i].render(rInfo);
+		for (int i = 0; i < houses.size(); i++) houses[i].render(rInfo);
+		present->render(rInfo);
+		glCullFace(GL_BACK);
+		popMatrix(MODEL);
+
+		lightPos[1] *= (-1.0f);  //reset the light position
+		multMatrixPoint(VIEW, lightPos, res);
+		glUniform4fv(pointLPos_uniformIds[3], 1, res);*/
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);		// Blend specular Ground with reflected geometry
+		terrain->render(rInfo);
+
+		// Render the Shadows
+		glUniform1i(shadowMode_uniformId, 1);  //Render with constant color
+		shadow_matrix(mat, plano_chao, lightPos);
+
+		glDisable(GL_DEPTH_TEST); //To force the shadow geometry to be rendered even if behind the floor
+
+		//Dark the color stored in color buffer
+		glBlendFunc(GL_DST_COLOR, GL_ZERO);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
+
+		pushMatrix(MODEL);
+		multMatrix(MODEL, mat);
+		sleigh->render(rInfo);
+		for (int i = 0; i < lampposts.size(); i++) lampposts[i].render(rInfo);
+		for (int i = 0; i < snowballs.size(); i++) snowballs[i].render(rInfo);
+		for (int i = 0; i < houses.size(); i++) houses[i].render(rInfo);
+		present->render(rInfo);
+		popMatrix(MODEL);
+
+		glDisable(GL_STENCIL_TEST);
+		glDisable(GL_BLEND);
+		glEnable(GL_DEPTH_TEST);
+		glUniform1i(shadowMode_uniformId, 0);  //Render with constant color
+
+	}
+}
+
+/*void renderReflect(void) {
+	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray, cams[active_camera].get_xyzpos() };
+	float mat[16];
+	float res[4];
+	glEnable(GL_DEPTH_TEST);
+	float* lightPos = lampposts[3].get_pointlight_pos();
+	lightPos[1] -= 0.5;
+	if (cams[active_camera].get_pos(1) > 0 && pointLightToggled) {
+		glEnable(GL_STENCIL_TEST);        // Escrever 1 no stencil buffer onde se for desenhar a reflexão e a sombra
+		glStencilFunc(GL_NEVER, 0x1, 0x1);
+		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+
+		// Fill stencil buffer with Ground shape; never rendered into color buffer
+		draw_mirror();
+
+		glUniform1i(shadowMode_uniformId, 0);  //iluminação phong
+
+		// Desenhar apenas onde o stencil buffer esta a 1
+		glStencilFunc(GL_EQUAL, 0x1, 0x1);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+		// Render the reflected geometry
+		lightPos[0] *= (-1.0f);  //mirror the position of light
+		multMatrixPoint(VIEW, lightPos, res);
+
+		glUniform4fv(pointLPos_uniformIds[3], 1, res);
+		pushMatrix(MODEL);
+		scale(MODEL, 1.0f, 1.0f, 1.0f);
+		glCullFace(GL_FRONT);
+		sleigh->render(rInfo);
+		for (int i = 0; i < lampposts.size(); i++) lampposts[i].render(rInfo);
+		for (int i = 0; i < snowballs.size(); i++) snowballs[i].render(rInfo);
+		for (int i = 0; i < houses.size(); i++) houses[i].render(rInfo);
+		present->render(rInfo);
+		glCullFace(GL_BACK);
+		popMatrix(MODEL);
+
+		lightPos[1] *= (-1.0f);  //reset the light position
+		multMatrixPoint(VIEW, lightPos, res);
+		glUniform4fv(pointLPos_uniformIds[3], 1, res);
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);		// Blend specular Ground with reflected geometry
+		draw_mirror();
+
+		glDisable(GL_STENCIL_TEST);
+		glDisable(GL_BLEND);
+		glEnable(GL_DEPTH_TEST);
+
+		//render the geometry
+		glUniform1i(shadowMode_uniformId, 0);
+
+	}
+}*/
+
 void renderScene(void) {
 	FrameCount++;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	if (active_camera == 2) renderRearView();
+	//if (active_camera == 2) renderRearView();
 
 	// load identity matrices
 	loadIdentity(VIEW);
@@ -383,6 +543,8 @@ void renderScene(void) {
 	//glUniform4fv(lPos_uniformId, 1, lightPos); //efeito capacete do mineiro, ou seja lighPos foi definido em eye coord 
 
 	float res[4];
+
+	
 	multMatrixPoint(VIEW, dirLightPos, res);
 	glUniform4fv(dirLPos_uniformId, 1, res);
 	glUniform1i(dirLToggled_uniformId, dirLightToggled);
@@ -413,9 +575,10 @@ void renderScene(void) {
 	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray, cams[active_camera].get_xyzpos()};
 
 	// draw the tori where the stencil is not 1 
-	if (active_camera == 2) glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
-	else glStencilFunc(GL_ALWAYS, 0x1, 0x1);
-
+	//if (active_camera == 2) glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
+	//else glStencilFunc(GL_ALWAYS, 0x1, 0x1);
+	//renderReflect();
+	renderShadows();
 	skybox->render(rInfo);
 	terrain->render(rInfo);
 	sleigh->render(rInfo);
@@ -456,7 +619,7 @@ void renderScene(void) {
 	pushMatrix(VIEW);
 	loadIdentity(VIEW);
 	ortho(m_viewport[0], m_viewport[0] + m_viewport[2] - 1, m_viewport[1], m_viewport[1] + m_viewport[3] - 1, -1, 1);
-	lensflare->render(rInfo, flarePos[0], flarePos[1], m_viewport);
+	//lensflare->render(rInfo, flarePos[0], flarePos[1], m_viewport);
 	//if (paused)
 		//RenderText(shaderText, "PAUSED", m_viewport[2] / 2.0f - 100.0f, m_viewport[3] / 2.0f + 25.0f, 1.0f, 1.0f, 1.0f, 1.01f);
 	//RenderText(shaderText, "LIVES: ", 25.0f, m_viewport[3] - 50.0f, 1.0f, 0.5f, 0.8f, 0.2f);
@@ -712,6 +875,7 @@ GLuint setupShaders() {
 	tex_loc3 = glGetUniformLocation(shader.getProgramIndex(), "texmap3");
 	bump_loc = glGetUniformLocation(shader.getProgramIndex(), "bumpmap");
 	textMode_uniformId = glGetUniformLocation(shader.getProgramIndex(), "text_mode");
+	shadowMode_uniformId = glGetUniformLocation(shader.getProgramIndex(), "shadowMode");
 
 
 	dirLPos_uniformId = glGetUniformLocation(shader.getProgramIndex(), "d_l_pos");
@@ -832,6 +996,15 @@ void init()
 	memcpy(rearViewModel.mat.emissive, emissive, 4 * sizeof(float));
 	rearViewModel.mat.shininess = 100.0f;
 	rearViewModel.mat.texCount = 0;
+
+	//objId = 2;  specular floor with quad
+	mirror = createQuad(5.0f, 5.0f);
+	memcpy(mirror.mat.ambient, amb, 4 * sizeof(float));
+	memcpy(mirror.mat.diffuse, diff, 4 * sizeof(float));
+	memcpy(mirror.mat.specular, spec, 4 * sizeof(float));
+	memcpy(mirror.mat.emissive, emissive, 4 * sizeof(float));
+	mirror.mat.shininess = 50.0f;
+	mirror.mat.texCount = 0;
 
 	cams.push_back(Camera(0.0f, 20.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1, 0, 0, 0));
 	cams.push_back(Camera(0.0f, 20.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1, 0, 0, 1));

@@ -152,7 +152,6 @@ struct keyboard_key_tracking uTrack = { false, false, false, false, false };
 // Create objects
 Terrain* terrain;
 Sleigh* sleigh;
-LensFlare* lensflare;
 vector<Lamppost> lampposts;
 vector<SnowBall> snowballs;
 vector<House> houses;
@@ -161,7 +160,7 @@ Statue* statue;
 vector<Particle> particles;
 Present* present;
 Skybox* skybox;
-
+LensFlare* lensflare;
 
 
 bool paused = false;
@@ -456,7 +455,7 @@ void renderScene(void) {
 	pushMatrix(VIEW);
 	loadIdentity(VIEW);
 	ortho(m_viewport[0], m_viewport[0] + m_viewport[2] - 1, m_viewport[1], m_viewport[1] + m_viewport[3] - 1, -1, 1);
-	//lensflare->render(rInfo, flarePos[0], flarePos[1], m_viewport);
+	lensflare->render(rInfo, flarePos[0], flarePos[1], m_viewport);
 	//if (paused)
 		//RenderText(shaderText, "PAUSED", m_viewport[2] / 2.0f - 100.0f, m_viewport[3] / 2.0f + 25.0f, 1.0f, 1.0f, 1.0f, 1.01f);
 	//RenderText(shaderText, "LIVES: ", 25.0f, m_viewport[3] - 50.0f, 1.0f, 0.5f, 0.8f, 0.2f);
@@ -780,7 +779,7 @@ void init()
 	/// Initialization of freetype library with font_name file
 	freeType_init(font_name);
 
-	//lensflare = new LensFlare(1.0f, "./flare.txt"); 
+	lensflare = new LensFlare(1.0f, "./flare.txt"); 
 	terrain = new Terrain(40.0f, 40.0f);
 	sleigh = new Sleigh(0.0f, 0.0f, 0.0f, 0.0f);
 	for (int i = 0; i < 360; i += 360 / 12) {

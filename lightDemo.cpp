@@ -127,7 +127,7 @@ float r = 15.0f;
 
 //Flare effect
 float lightScreenPos[3];  //Position of the light in Window Coordinates
-GLuint FlareTextureArray[5];
+GLuint FlareTextureArray[6];
 
 // Frame counting and FPS computation
 long myTime, timebase = 0, frame = 0;

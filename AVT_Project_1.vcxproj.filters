@@ -107,9 +107,6 @@
     <ClInclude Include="LensFlare.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="flare.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Skybox.h">
       <Filter>Header Files</Filter>
     </ClInclude>

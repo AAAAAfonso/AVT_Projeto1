@@ -61,13 +61,14 @@ void main() {
 	float dist = length(pos); 
 
 	float fogAmount = exp( -dist*0.06 );
-	colorOut = vec4(0.0);
+	colorOut = vec4(0.0); //??????
+	float intensity;
 
 	//calculations for the point light
 	if (point_l_toggled) {
 		for (int i = 0; i < 6; i++) {
 			vec3 p_l = normalize(DataIn.pointLightDir[i]);
-			float intensity = max(dot(n,p_l), 0.0);
+			intensity = max(dot(n,p_l), 0.0);
 			if (intensity > 0.0) {
 				vec3 h = normalize(p_l + e);
 				float intSpec = max(dot(h,n), 0.0);
@@ -80,7 +81,7 @@ void main() {
 	// calculations for the directional light
 	if (dir_l_toggled) {
 		vec3 d_l = normalize(DataIn.dirLightDir);
-		float intensity = max(dot(n,d_l), 0.0);
+		intensity = max(dot(n,d_l), 0.0);
 		if (intensity > 0.0) {
 			vec3 h = normalize(d_l + e);
 			float intSpec = max(dot(h,n), 0.0);
@@ -95,7 +96,7 @@ void main() {
 		for (int i = 0; i < 2; i++) {
 			vec3 s_l = normalize(DataIn.spotLightDir[i]);
 			if (dot(s_l, s_d) > spot_l_threshold) {
-				float intensity = max(dot(n,s_l), 0.0);
+				intensity = max(dot(n,s_l), 0.0);
 				if (intensity > 0.0) {
 					vec3 h = normalize(s_l + e);
 					float intSpec = max(dot(h,n), 0.0);
@@ -105,8 +106,13 @@ void main() {
 			}
 		}
 	}
-
-	if (text_mode == 6) {    //Environmental sphere mapping
+	if (text_mode == 8) {
+		vec4 texel = texture(texmap, DataIn.tex_coord);  
+		if(texel.a == 0.0) discard;
+		else 
+			colorOut = vec4(max(intensity*texel.rgb + spec.xyz, 0.1*texel.rgb), texel.a); //melhor que consegui fazer... Perguntar ao professor
+	}
+	else if (text_mode == 6) {    //Environmental sphere mapping
 		vec4 texel = texture(texmap, DataIn.sphere_coord);
 		vec4 aux_color = mix(texel, colorOut, 0.3);
 	    colorOut = vec4(aux_color.rgb, colorOut.a);

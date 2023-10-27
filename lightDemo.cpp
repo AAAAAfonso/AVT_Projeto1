@@ -116,7 +116,7 @@ bool fogToggled = true;
 GLint fogToggled_uniformId;
 
 GLint textMode_uniformId;
-GLuint TextureArray[7];
+GLuint TextureArray[8];
 
 // Mouse Tracking Variables
 int startX, startY, tracking = 0;
@@ -165,6 +165,7 @@ Skybox* skybox;
 
 
 bool paused = false;
+int type = 0;
 
 
 
@@ -336,7 +337,7 @@ void renderRearView(void) {
 
 	glUniform1i(fogToggled_uniformId, fogToggled);
 
-	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray };
+	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray,  cams[active_camera].get_xyzpos() };
 
 	// draw the tori where the stencil is not 1 
 	glStencilFunc(GL_EQUAL, 0x1, 0x1);
@@ -345,10 +346,10 @@ void renderRearView(void) {
 	skybox->render(rInfo);
 	terrain->render(rInfo);
 	sleigh->render(rInfo);
-	for (int i = 0; i < 6; i++) lampposts[i].render(rInfo);
+	for (int i = 0; i < lampposts.size(); i++) lampposts[i].render(rInfo);
 	for (int i = 0; i < snowballs.size(); i++) snowballs[i].render(rInfo);
 	for (int i = 0; i < houses.size(); i++) houses[i].render(rInfo);
-	for (int i = 0; i < trees.size(); i++) trees[i].render(rInfo);
+	for (int i = 0; i < trees.size(); i++) trees[i].render(rInfo, type);
 	for (int i = 0; i < particles.size(); i++) particles[i].render(rInfo);
 	present->render(rInfo);
 	statue->render(rInfo);
@@ -410,7 +411,7 @@ void renderScene(void) {
 
 	glUniform1i(fogToggled_uniformId, fogToggled);
 
-	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray };
+	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray, cams[active_camera].get_xyzpos()};
 
 	// draw the tori where the stencil is not 1 
 	if (active_camera == 2) glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
@@ -422,7 +423,7 @@ void renderScene(void) {
 	for (int i = 0; i < lampposts.size(); i++) lampposts[i].render(rInfo);
 	for (int i = 0; i < snowballs.size(); i++) snowballs[i].render(rInfo);
 	for (int i = 0; i < houses.size(); i++) houses[i].render(rInfo);
-	for (int i = 0; i < trees.size(); i++) trees[i].render(rInfo);
+	for (int i = 0; i < trees.size(); i++) trees[i].render(rInfo, type);
 	for (int i = 0; i < particles.size(); i++) particles[i].render(rInfo);
 	present->render(rInfo);
 	statue->render(rInfo);
@@ -517,7 +518,9 @@ void processKeysDown(unsigned char key, int xx, int yy)
 	case '3':
 		active_camera = 2;
 		break;
-
+	case '4':
+		type++; 
+		if (type == 5) type = 0;
 	case 'n':
 		dirLightToggled = !dirLightToggled;
 		break;
@@ -768,7 +771,7 @@ void init()
 
 	//Texture Object definition
 
-	glGenTextures(7, TextureArray);
+	glGenTextures(8, TextureArray);
 	Texture2D_Loader(TextureArray, "texmap.jpg", 0);
 	Texture2D_Loader(TextureArray, "texmap1.jpg", 1);
 	Texture2D_Loader(TextureArray, "texmap2.png", 2);
@@ -776,6 +779,7 @@ void init()
 	Texture2D_Loader(TextureArray, "bumpmap.jpg", 4);
 	Texture2D_Loader(TextureArray, "texmap4.jpg", 5);
 	Texture2D_Loader(TextureArray, "texmap5.jpg", 6);
+	Texture2D_Loader(TextureArray, "tree.tga", 7);
 
 	/// Initialization of freetype library with font_name file
 	freeType_init(font_name);

@@ -36,6 +36,9 @@
     <ClCompile Include="meshFromAssimp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="I3DBillboard.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AVTmathLib.h">
@@ -107,7 +110,13 @@
     <ClInclude Include="LensFlare.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="flare.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Skybox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="I3DBillboard.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

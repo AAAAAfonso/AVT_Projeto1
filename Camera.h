@@ -17,6 +17,10 @@ public:
 		return pos[n];
 	}
 
+	float* get_xyzpos() {
+		return pos;
+	}
+
 	float get_target(int n) {
 		return target[n];
 	}

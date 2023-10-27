@@ -10,6 +10,7 @@ struct render_info {
 	GLint normal_uniformId;
 	GLint textMode_uniformId;
 	GLuint *TextureArray;
+	float *cam_pos;
 };
 
 #endif

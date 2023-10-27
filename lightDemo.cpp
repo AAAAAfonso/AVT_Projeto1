@@ -321,6 +321,49 @@ void changeSize(int w, int h) {
 
 
 void renderRearView(void) {
+	glEnable(GL_STENCIL_TEST);
+	glDisable(GL_DEPTH_TEST);
+	int m_viewport[4];
+	glGetIntegerv(GL_VIEWPORT, m_viewport);
+	int w = m_viewport[2]; int h = m_viewport[3];
+
+	loadIdentity(PROJECTION);
+	if (m_viewport[2] <= h)
+		ortho(-2.0, 2.0, -2.0 * (GLfloat)h / (GLfloat)w,
+			2.0 * (GLfloat)h / (GLfloat)w, -10, 10);
+	else
+		ortho(-2.0 * (GLfloat)w / (GLfloat)h,
+			2.0 * (GLfloat)w / (GLfloat)h, -2.0, 2.0, -10, 10);
+
+	// load identity matrices for Model-View
+	loadIdentity(VIEW);
+	loadIdentity(MODEL);
+
+	glUseProgram(shader.getProgramIndex());
+
+	//n�o vai ser preciso enviar o material pois o cubo n�o � desenhado
+
+	translate(MODEL, -0.9f, 1.2f, -0.5f);
+	scale(MODEL, 1.8f, 0.6f, 1.0f);
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	//glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	glClear(GL_STENCIL_BUFFER_BIT);
+
+	glStencilFunc(GL_NEVER, 0x1, 0x1);
+	glStencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
+
+	glBindVertexArray(rearViewModel.vao);
+	glDrawElements(rearViewModel.type, rearViewModel.numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	loadIdentity(PROJECTION);
+	perspective(53.13f, ratio, 0.1f, 1000.0f);
+
 	// load identity matrices
 	loadIdentity(VIEW);
 	loadIdentity(MODEL);
@@ -383,6 +426,9 @@ void renderRearView(void) {
 	for (int i = 0; i < particles.size(); i++) particles[i].render(rInfo);
 	present->render(rInfo);
 	statue->render(rInfo);
+
+	glDisable(GL_STENCIL_TEST);
+	glEnable(GL_DEPTH_TEST);
 }
 
 
@@ -517,8 +563,7 @@ void renderShadows(void) {
 void renderScene(void) {
 	FrameCount++;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	//if (active_camera == 2) renderRearView();
+	
 
 	// load identity matrices
 	loadIdentity(VIEW);
@@ -574,10 +619,7 @@ void renderScene(void) {
 
 	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray, cams[active_camera].get_xyzpos()};
 
-	// draw the tori where the stencil is not 1 
-	//if (active_camera == 2) glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
-	//else glStencilFunc(GL_ALWAYS, 0x1, 0x1);
-	//renderReflect();
+	// draw the tori where the stencil is not 1
 	renderShadows();
 	skybox->render(rInfo);
 	terrain->render(rInfo);
@@ -631,6 +673,8 @@ void renderScene(void) {
 	popMatrix(MODEL);
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
+
+	if (active_camera == 2) renderRearView();
 
 	glutSwapBuffers();
 }

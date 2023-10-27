@@ -61,7 +61,7 @@ void main () {
 	s_l1 = vec3(s_l_pos1 - pos);
 	s_d = vec3(-s_l_spot);
 
-	/*if (text_mode == 4) {
+	if (text_mode == 4) {
 		t = normalize(m_normal * tangent.xyz);  
 		b = tangent.w * cross(n,t);
 	
@@ -112,7 +112,7 @@ void main () {
 		aux.y = dot(s_d, b);
 		aux.z = dot(s_d, n);
 		s_d = normalize(aux);
-	}*/
+	}
 
 	DataOut.normal = n;
 	DataOut.eye = eye;

@@ -402,6 +402,7 @@ void renderRearView(void) {
 	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray,  cams[active_camera].get_xyzpos() };
 
 	// draw the tori where the stencil is not 1 
+	glEnable(GL_STENCIL_TEST);
 	glStencilFunc(GL_EQUAL, 0x1, 0x1);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
@@ -612,7 +613,7 @@ void renderScene(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	renderMirror();
-	//renderShadows();
+	renderShadows();
 
 	// load identity matrices
 	loadIdentity(VIEW);
@@ -722,7 +723,7 @@ void renderScene(void) {
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 
-	//if (active_camera == 2) renderRearView();
+	if (active_camera == 2) renderRearView();
 
 	glutSwapBuffers();
 }
@@ -1048,7 +1049,7 @@ void init()
 	for (int i = 0; i < 6; i++) {
 		lampposts.push_back(Lamppost(5.0f * ((i % 3) - 1), 2.5f * ((i / 3) * 2 - 1)));
 	}
-	for (int i = 0; i < 1; i++) {
+	for (int i = 0; i < 8; i++) {
 		houses.push_back(House(5.0f * ((i % 4) - 1) - 2.5f, 4.0f * ((i / 4) * 2 - 1)));
 	}
 	sleigh->get_direction();

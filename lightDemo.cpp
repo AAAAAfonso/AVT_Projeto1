@@ -546,8 +546,8 @@ void renderShadows(void) {
 	if (cams[active_camera].get_pos(1) > 0 && pointLightToggled) {
 		//SHADOWS
 		glEnable(GL_STENCIL_TEST);        // Escrever 1 no stencil buffer onde se for desenhar a reflexão e a sombra
-		glStencilFunc(GL_NEVER, 0x1, 0x1);
-		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+		glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
+		glStencilOp(GL_ZERO, GL_ZERO, GL_REPLACE);
 
 		terrain->render(rInfo);
 		
@@ -611,11 +611,9 @@ void renderShadows(void) {
 void renderScene(void) {
 	FrameCount++;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
-	renderMirror();
-	renderShadows();
 
-	// load identity matrices
+	renderMirror();
+	
 	loadIdentity(VIEW);
 	loadIdentity(MODEL);
 	// set the camera using a function similar to gluLookAt
@@ -670,6 +668,7 @@ void renderScene(void) {
 	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray, cams[active_camera].get_xyzpos()};
 
 	// draw the tori where the stencil is not 1
+	renderShadows();
 	skybox->render(rInfo);
 	terrain->render(rInfo);
 	sleigh->render(rInfo);

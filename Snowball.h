@@ -117,6 +117,55 @@ public:
 		}
 	}
 
+	void render_reflected(struct render_info rInfo) {
+		glFrontFace(GL_CW);
+
+		static float angle;
+		if (this->alive) {
+			GLint loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.ambient");
+			glUniform4fv(loc, 1, mesh.mat.ambient);
+			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.diffuse");
+			glUniform4fv(loc, 1, mesh.mat.diffuse);
+			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.specular");
+			glUniform4fv(loc, 1, mesh.mat.specular);
+			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
+			glUniform1f(loc, mesh.mat.shininess);
+
+			glUniform1i(rInfo.textMode_uniformId, 4);
+
+			loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "bumpmap");
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, rInfo.TextureArray[4]);
+			glUniform1i(loc, 0);
+
+			pushMatrix(MODEL);
+			translate(MODEL, -7.0f, 0.0f, 0.0f);
+			scale(MODEL, -1.0f, 1.0f, 1.0f);
+			translate(MODEL, 7.0f, 0.0f, 0.0f);
+			translate(MODEL, this->pos[0], this->pos[1], this->pos[2]);
+			rotate(MODEL, angle, dir[2], 0, -dir[0]);
+			translate(MODEL, 0, 0, 0);
+			angle += 0.2;
+
+			// send matrices to OGL
+			computeDerivedMatrix(PROJ_VIEW_MODEL);
+			glUniformMatrix4fv(rInfo.vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+			glUniformMatrix4fv(rInfo.pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+			computeNormalMatrix3x3();
+			glUniformMatrix3fv(rInfo.normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+			// Render mesh
+			glBindVertexArray(mesh.vao);
+
+			glDrawElements(mesh.type, mesh.numIndexes, GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
+
+			popMatrix(MODEL);
+		}
+
+		glFrontFace(GL_CCW);
+	}
+
 	void updateSnowBallSpeed() {
 		this->speed += this->speed < 12? (rand() % 200) / 100 : 12;
 	}

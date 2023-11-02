@@ -376,4 +376,22 @@ public:
 		aiRecursive_render(rInfo, this->sceneSleigh, this->sceneSleigh->mRootNode);
 		popMatrix(MODEL);
 	}
+
+	void render_reflected(struct render_info rInfo) {
+		glFrontFace(GL_CW);
+
+		pushMatrix(MODEL);
+
+		translate(MODEL, -7.0f, 0.0f, 0.0f);
+		scale(MODEL, -1.0f, 1.0f, 1.0f);
+		translate(MODEL, 7.0f, 0.0f, 0.0f);
+		translate(MODEL, pos[0], pos[1], pos[2]);
+		rotate(MODEL, hAngle - 90, 0.0f, 1.0f, 0.0f);
+		rotate(MODEL, vAngle, 0.0, 0.0f, -1.0f);
+		scale(MODEL, this->scaleFactorSleigh, this->scaleFactorSleigh, this->scaleFactorSleigh);
+		aiRecursive_render(rInfo, this->sceneSleigh, this->sceneSleigh->mRootNode);
+		popMatrix(MODEL);
+
+		glFrontFace(GL_CCW);
+	}
 };

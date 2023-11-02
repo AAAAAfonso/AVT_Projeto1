@@ -128,10 +128,67 @@ public:
 		glDrawElements(this->TreeBillboard.type, this->TreeBillboard.numIndexes, GL_UNSIGNED_INT, 0);
 		popMatrix(MODEL);
 
-			//	if (type==0 || type==1) // restore matrix VIEW_MODEL não é necessário pois a PVM é sempre calculada a pArtir da MODEL e da VIEW que não são ALTERADAS
+			//	if (type==0 || type==1) // restore matrix VIEW_MODEL nï¿½o ï¿½ necessï¿½rio pois a PVM ï¿½ sempre calculada a pArtir da MODEL e da VIEW que nï¿½o sï¿½o ALTERADAS
 
 		popMatrix(MODEL);
 	
+	}
+
+	void render_reflected(struct render_info rInfo, int type) {
+		float pos[3];
+		GLint loc;
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		glUniform1i(rInfo.textMode_uniformId, 8); // draw textured quads
+		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texmap");
+		glActiveTexture(GL_TEXTURE6);
+		glBindTexture(GL_TEXTURE_2D, rInfo.TextureArray[7]);
+		glUniform1i(loc, 6);
+
+		pushMatrix(MODEL);
+		translate(MODEL, this->x, 0, this->z);
+
+		pos[0] = this->x; pos[1] = 0; pos[2] = this->z;
+
+		if (type == 2)
+			l3dBillboardSphericalBegin(rInfo.cam_pos, pos);
+		else if (type == 3)
+			l3dBillboardCylindricalBegin(rInfo.cam_pos, pos);
+		//diffuse and ambient color are not used in the tree quads
+		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.specular");
+		glUniform4fv(loc, 1, this->TreeBillboard.mat.specular);
+		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
+		glUniform1f(loc, this->TreeBillboard.mat.shininess);
+
+		pushMatrix(MODEL);
+		translate(MODEL, -7.0f, 0.0f, 0.0f);
+		scale(MODEL, -1.0f, 1.0f, 1.0f);
+		translate(MODEL, 7.0f, 0.0f, 0.0f);
+		translate(MODEL, 0.0, (this->height + this->height * 3.0f) / 2, 0.0f);
+
+		// send matrices to OGL
+		if (type == 0 || type == 1) {     //Cheating matrix reset billboard techniques
+			computeDerivedMatrix(VIEW_MODEL);
+			//reset VIEW_MODEL
+			if (type == 0) BillboardCheatSphericalBegin();
+			else BillboardCheatCylindricalBegin();
+			computeDerivedMatrix_PVM(); // calculate PROJ_VIEW_MODEL
+		}
+		else computeDerivedMatrix(PROJ_VIEW_MODEL);
+
+		glUniformMatrix4fv(rInfo.vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+		glUniformMatrix4fv(rInfo.pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+		computeNormalMatrix3x3();
+		glUniformMatrix3fv(rInfo.normal_uniformId, 1, GL_FALSE, mNormal3x3);
+		glBindVertexArray(this->TreeBillboard.vao);
+		glDrawElements(this->TreeBillboard.type, this->TreeBillboard.numIndexes, GL_UNSIGNED_INT, 0);
+		popMatrix(MODEL);
+
+		//	if (type==0 || type==1) // restore matrix VIEW_MODEL nï¿½o ï¿½ necessï¿½rio pois a PVM ï¿½ sempre calculada a pArtir da MODEL e da VIEW que nï¿½o sï¿½o ALTERADAS
+
+		popMatrix(MODEL);
+
 	}
 
 	bool getColided() {

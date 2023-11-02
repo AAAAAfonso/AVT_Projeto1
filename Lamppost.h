@@ -129,6 +129,74 @@ public:
 		popMatrix(MODEL);
 	}
 
+	void render_reflected(struct render_info rInfo) {
+		glFrontFace(GL_CW);
+
+		GLint loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.ambient");
+		glUniform4fv(loc, 1, lamp.mat.ambient);
+		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.diffuse");
+		glUniform4fv(loc, 1, lamp.mat.diffuse);
+		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.specular");
+		glUniform4fv(loc, 1, lamp.mat.specular);
+		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
+		glUniform1f(loc, lamp.mat.shininess);
+
+		glUniform1i(rInfo.textMode_uniformId, 0);
+
+		pushMatrix(MODEL);
+		translate(MODEL, -7.0f, 0.0f, 0.0f);
+		scale(MODEL, -1.0f, 1.0f, 1.0f);
+		translate(MODEL, 7.0f, 0.0f, 0.0f);
+		translate(MODEL, x, 2.0f, z);
+
+		// send matrices to OGL
+		computeDerivedMatrix(PROJ_VIEW_MODEL);
+		glUniformMatrix4fv(rInfo.vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+		glUniformMatrix4fv(rInfo.pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+		computeNormalMatrix3x3();
+		glUniformMatrix3fv(rInfo.normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+		// Render mesh
+		glBindVertexArray(lamp.vao);
+
+		glDrawElements(lamp.type, lamp.numIndexes, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		popMatrix(MODEL);
+
+		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.ambient");
+		glUniform4fv(loc, 1, post.mat.ambient);
+		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.diffuse");
+		glUniform4fv(loc, 1, post.mat.diffuse);
+		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.specular");
+		glUniform4fv(loc, 1, post.mat.specular);
+		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "mat.shininess");
+		glUniform1f(loc, post.mat.shininess);
+
+		pushMatrix(MODEL);
+		translate(MODEL, -7.0f, 0.0f, 0.0f);
+		scale(MODEL, -1.0f, 1.0f, 1.0f);
+		translate(MODEL, 7.0f, 0.0f, 0.0f);
+		translate(MODEL, x, 1.0f, z);
+
+		// send matrices to OGL
+		computeDerivedMatrix(PROJ_VIEW_MODEL);
+		glUniformMatrix4fv(rInfo.vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+		glUniformMatrix4fv(rInfo.pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+		computeNormalMatrix3x3();
+		glUniformMatrix3fv(rInfo.normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+		// Render mesh
+		glBindVertexArray(post.vao);
+
+		glDrawElements(post.type, post.numIndexes, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		popMatrix(MODEL);
+
+		glFrontFace(GL_CCW);
+	}
+
 	bool getColided() {
 		return this->colided;
 	}

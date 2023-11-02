@@ -205,6 +205,22 @@ public:
 		popMatrix(MODEL);
 	}
 
+	void render_reflected(struct render_info rInfo) {
+		glFrontFace(GL_CW);
+
+		pushMatrix(MODEL);
+
+		translate(MODEL, -7.0f, 0.0f, 0.0f);
+		scale(MODEL, -1.0f, 1.0f, 1.0f);
+		translate(MODEL, 7.0f, 0.0f, 0.0f);
+		translate(MODEL, this->x, 0, this->z);
+		scale(MODEL, this->ScaleFactorHouse, this->ScaleFactorHouse, this->ScaleFactorHouse);
+		aiRecursive_render(rInfo, this->sceneHouse, this->sceneHouse->mRootNode);
+		popMatrix(MODEL);
+	
+		glFrontFace(GL_CCW);
+	}
+
 
 	bool getColided() {
 		return this->colided;

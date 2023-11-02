@@ -1059,7 +1059,7 @@ void init()
 	for (int i = 0; i < 6; i++) {
 		lampposts.push_back(Lamppost(5.0f * ((i % 3) - 1), 2.5f * ((i / 3) * 2 - 1)));
 	}
-	for (int i = 0; i < 1; i++) {
+	for (int i = 0; i < 8; i++) {
 		houses.push_back(House(5.0f * ((i % 4) - 1) - 2.5f, 4.0f * ((i / 4) * 2 - 1)));
 	}
 	sleigh->get_direction();

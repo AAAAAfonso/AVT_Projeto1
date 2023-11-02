@@ -102,6 +102,9 @@ public:
 		// OpenGL matrices are column major
 		m.Transpose();
 
+		glUniform1i(rInfo.textMode_uniformId, 20); // draw textured quads
+		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texmap");
+
 		// save model matrix and apply node transformation
 		pushMatrix(MODEL);
 

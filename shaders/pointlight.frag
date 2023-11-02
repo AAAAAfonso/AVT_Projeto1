@@ -17,6 +17,15 @@ uniform sampler2D texmap3;
 uniform sampler2D bumpmap;
 uniform int text_mode;
 
+uniform	sampler2D texUnitDiff;
+uniform	sampler2D texUnitDiff1;
+uniform	sampler2D texUnitSpec;
+uniform	sampler2D texUnitNormalMap;
+
+uniform bool normalMap;  //for normal mapping
+uniform bool specularMap;
+uniform uint diffMapCount;
+
 
 struct Materials {
 	vec4 diffuse;
@@ -42,6 +51,8 @@ in Data {
 	vec2 sphere_coord;
 } DataIn;
 
+vec4 diff, auxSpec;
+
 void main() {
 
 	vec4 spec = vec4(0.0);
@@ -54,7 +65,7 @@ void main() {
 	if (text_mode == 5) {
 		colorOut = vec4(texture(texmap, DataIn.tex_coord).rgb, 1.0f);
 		return;
-	} else if (text_mode == 4) {
+	} else if (text_mode == 4 || normalMap) {
 		n = normalize(2.0*texture(bumpmap, DataIn.tex_coord).rgb - 1.0);
 	} else {
 		n = normalize(DataIn.normal);
@@ -66,8 +77,26 @@ void main() {
 	float dist = length(pos); 
 
 	float fogAmount = exp( -dist*0.06 );
-	colorOut = vec4(0.0); //??????
+	colorOut = vec4(0.0);
 	float intensity;
+
+	if(mat.texCount == 0) {
+		diff = mat.diffuse;
+		auxSpec = mat.specular;
+	}
+	else {
+		if(diffMapCount == 0)
+			diff = mat.diffuse;
+		else if(diffMapCount == 1)
+			diff = mat.diffuse * texture(texUnitDiff, DataIn.tex_coord);
+		else
+			diff = mat.diffuse * texture(texUnitDiff, DataIn.tex_coord) * texture(texUnitDiff1, DataIn.tex_coord);
+
+		if(specularMap) 
+			auxSpec = mat.specular * texture(texUnitSpec, DataIn.tex_coord);
+		else
+			auxSpec = mat.specular;
+	}
 
 	//calculations for the point light
 	if (point_l_toggled) {
@@ -77,9 +106,9 @@ void main() {
 			if (intensity > 0.0) {
 				vec3 h = normalize(p_l + e);
 				float intSpec = max(dot(h,n), 0.0);
-				spec = mat.specular * pow(intSpec, mat.shininess);
+				spec = auxSpec * pow(intSpec, mat.shininess);
 			}
-			colorOut += intensity * mat.diffuse + spec;
+			colorOut += intensity * diff + spec;
 		}
 	}
 
@@ -90,9 +119,9 @@ void main() {
 		if (intensity > 0.0) {
 			vec3 h = normalize(d_l + e);
 			float intSpec = max(dot(h,n), 0.0);
-			spec = mat.specular * pow(intSpec, mat.shininess);
+			spec = auxSpec * pow(intSpec, mat.shininess);
 		}
-		colorOut += intensity * mat.diffuse + spec;
+		colorOut += intensity * diff + spec;
 	}
 
 	// calculations for the spotlight
@@ -105,9 +134,9 @@ void main() {
 				if (intensity > 0.0) {
 					vec3 h = normalize(s_l + e);
 					float intSpec = max(dot(h,n), 0.0);
-					spec = mat.specular * pow(intSpec, mat.shininess);
+					spec = auxSpec * pow(intSpec, mat.shininess);
 				}
-				colorOut += intensity * mat.diffuse + spec;
+				colorOut += intensity * diff + spec;
 			}
 		}
 	}

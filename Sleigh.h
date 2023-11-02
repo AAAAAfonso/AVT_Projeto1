@@ -21,9 +21,8 @@ class Sleigh {
 private:
 	const aiScene* sceneSleigh = NULL;
 
-	GLint normalMap_loc2;
-	GLint specularMap_loc2;
-	GLint diffMapCount_loc2;
+	GLuint* textureIds;  //for the input model
+
 	std::vector<struct MyMesh> myMeshes;
 
 	float pos[4];
@@ -41,7 +40,7 @@ private:
 		if (!Import3DFromFile( &(this->sceneSleigh), filepath))
 			return;
 		this->scaleFactorSleigh = scaleFactor;
-	 	myMeshes = createMeshFromAssimp(this->sceneSleigh, dirpathSleigh);
+	 	myMeshes = createMeshFromAssimp(this->sceneSleigh, dirpathSleigh, textureIds);
 
 	}
 
@@ -110,7 +109,7 @@ public:
 			}
 		}
 		
-		for (unsigned int i = 0; i < uInfo->trees->size(); i++) {
+		/*for (unsigned int i = 0; i < uInfo->trees->size(); i++) {
 			if ((*(uInfo->trees))[i].aabb_min[0] <= this->aabb_max[0] &&
 				(*(uInfo->trees))[i].aabb_max[0] >= this->aabb_min[0] &&
 				(*(uInfo->trees))[i].aabb_min[1] <= this->aabb_max[1] &&
@@ -120,7 +119,7 @@ public:
 				(*(uInfo->trees))[i].setColided(dir);
 				col_detected = true;
 			}
-		}
+		}*/
 		for (unsigned int i = 0; i < uInfo->lampposts->size(); i++) {
 			if ((*(uInfo->lampposts))[i].aabb_min[0] <= this->aabb_max[0] &&
 				(*(uInfo->lampposts))[i].aabb_max[0] >= this->aabb_min[0] &&
@@ -268,6 +267,9 @@ public:
 	{
 		GLint loc;
 
+		glUniform1i(rInfo.textMode_uniformId, 20); // draw textured quads
+		loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texmap");
+
 		// Get node transformation matrix
 		aiMatrix4x4 m = nd->mTransformation;
 		// OpenGL matrices are column major
@@ -303,37 +305,42 @@ public:
 
 			//devido ao fragment shader suporta 2 texturas difusas simultaneas, 1 especular e 1 normal map
 
-			glUniform1i(normalMap_loc2, false);   //GLSL normalMap variable initialized to 0
-			glUniform1i(specularMap_loc2, false);
-			glUniform1ui(diffMapCount_loc2, 0);
+			glUniform1i(rInfo.normalMap_loc, false);   //GLSL normalMap variable initialized to 0
+			glUniform1i(rInfo.specularMap_loc, false);
+			glUniform1ui(rInfo.diffMapCount_loc, 0);
 
 			if (myMeshes[nd->mMeshes[n]].mat.texCount != 0)
 				for (unsigned int i = 0; i < myMeshes[nd->mMeshes[n]].mat.texCount; ++i) {
+
+					//Activate a TU with a Texture Object
+					GLuint TU = myMeshes[nd->mMeshes[n]].texUnits[i];
+					glActiveTexture(GL_TEXTURE0 + TU);
+					glBindTexture(GL_TEXTURE_2D, textureIds[TU]);
+
 					if (myMeshes[nd->mMeshes[n]].texTypes[i] == DIFFUSE) {
 						if (diffMapCount == 0) {
 							diffMapCount++;
 							loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitDiff");
 							glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);
-							glUniform1ui(diffMapCount_loc2, diffMapCount);
+							glUniform1ui(rInfo.diffMapCount_loc, diffMapCount);
 						}
 						else if (diffMapCount == 1) {
 							diffMapCount++;
 							loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitDiff1");
 							glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);
-							glUniform1ui(diffMapCount_loc2, diffMapCount);
+							glUniform1ui(rInfo.diffMapCount_loc, diffMapCount);
 						}
 						else printf("Only supports a Material with a maximum of 2 diffuse textures\n");
 					}
 					else if (myMeshes[nd->mMeshes[n]].texTypes[i] == SPECULAR) {
 						loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitSpec");
 						glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);
-						glUniform1i(specularMap_loc2, true);
+						glUniform1i(rInfo.specularMap_loc, true);
 					}
 					else if (myMeshes[nd->mMeshes[n]].texTypes[i] == NORMALS) { //Normal map
-						loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitNormalMap");
-						/*if (normalMapKey)
-							glUniform1i(normalMap_loc, normalMapKey);*/
-						glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);
+						/*loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitNormalMap");
+						glUniform1i(rInfo.normalMap_loc, true);
+						glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);*/
 
 					}
 					else printf("Texture Map not supported\n");
@@ -374,6 +381,9 @@ public:
 		rotate(MODEL, vAngle, 0.0, 0.0f, -1.0f);
 		scale(MODEL, this->scaleFactorSleigh, this->scaleFactorSleigh, this->scaleFactorSleigh);
 		aiRecursive_render(rInfo, this->sceneSleigh, this->sceneSleigh->mRootNode);
+		glUniform1i(rInfo.normalMap_loc, false);   //GLSL normalMap variable to 0
+		glUniform1i(rInfo.specularMap_loc, false);
+		glUniform1ui(rInfo.diffMapCount_loc, 0);
 		popMatrix(MODEL);
 	}
 

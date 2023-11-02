@@ -17,10 +17,9 @@ extern float scaleFactor;
 
 class House {
 private:
-	GLint normalMap_loc;
-	GLint specularMap_loc;
-	GLint diffMapCount_loc;
 	const aiScene* sceneHouse;
+	GLuint* textureIds;  //for the input model
+
 
 	std::vector<struct MyMesh> myMeshes;
 
@@ -47,7 +46,7 @@ private:
 		if (!Import3DFromFile(&(this->sceneHouse), filepath1))
 			return;
 		this->ScaleFactorHouse = 0.002;
-		myMeshes = createMeshFromAssimp(this->sceneHouse, model_dirHouse);
+		myMeshes = createMeshFromAssimp(this->sceneHouse, model_dirHouse, this->textureIds);
 
 		/*float house_amb[4] = {0.2f, 0.2f, 0.2f, 1.0f};
 		float house_diff[4] = { 0.3f, 0.3f, 0.3f, 1.0f };
@@ -133,37 +132,41 @@ public:
 
 			//devido ao fragment shader suporta 2 texturas difusas simultaneas, 1 especular e 1 normal map
 
-			glUniform1i(normalMap_loc, false);   //GLSL normalMap variable initialized to 0
-			glUniform1i(specularMap_loc, false);
-			glUniform1ui(diffMapCount_loc, 0);
+			glUniform1i(rInfo.normalMap_loc, false);   //GLSL normalMap variable initialized to 0
+			glUniform1i(rInfo.specularMap_loc, false);
+			glUniform1ui(rInfo.diffMapCount_loc, 0);
 
 			if (myMeshes[nd->mMeshes[n]].mat.texCount != 0)
 				for (unsigned int i = 0; i < myMeshes[nd->mMeshes[n]].mat.texCount; ++i) {
+					//Activate a TU with a Texture Object
+					GLuint TU = myMeshes[nd->mMeshes[n]].texUnits[i];
+					glActiveTexture(GL_TEXTURE0 + TU);
+					glBindTexture(GL_TEXTURE_2D, textureIds[TU]);
+
 					if (myMeshes[nd->mMeshes[n]].texTypes[i] == DIFFUSE) {
 						if (diffMapCount == 0) {
 							diffMapCount++;
 							loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitDiff");
 							glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);
-							glUniform1ui(diffMapCount_loc, diffMapCount);
+							glUniform1ui(rInfo.diffMapCount_loc, diffMapCount);
 						}
 						else if (diffMapCount == 1) {
 							diffMapCount++;
 							loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitDiff1");
 							glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);
-							glUniform1ui(diffMapCount_loc, diffMapCount);
+							glUniform1ui(rInfo.diffMapCount_loc, diffMapCount);
 						}
 						else printf("Only supports a Material with a maximum of 2 diffuse textures\n");
 					}
 					else if (myMeshes[nd->mMeshes[n]].texTypes[i] == SPECULAR) {
 						loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitSpec");
 						glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);
-						glUniform1i(specularMap_loc, true);
+						glUniform1i(rInfo.specularMap_loc, true);
 					}
 					else if (myMeshes[nd->mMeshes[n]].texTypes[i] == NORMALS) { //Normal map
-						loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitNormalMap");
-						/*if (normalMapKey)
-							glUniform1i(normalMap_loc, normalMapKey);*/
-						glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);
+						/*loc = glGetUniformLocation(rInfo.shader.getProgramIndex(), "texUnitNormalMap");
+						glUniform1i(rInfo.normalMap_loc, true);
+						glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]);*/
 
 					}
 					else printf("Texture Map not supported\n");

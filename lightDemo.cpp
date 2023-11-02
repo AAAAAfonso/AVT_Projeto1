@@ -120,6 +120,11 @@ GLint shadowMode_uniformId;
 GLuint TextureArray[8];
 GLfloat plano_chao[4] = { 0,1,0,0 };
 
+GLint normalMap_loc;
+GLint specularMap_loc;
+GLint diffMapCount_loc;
+
+
 
 // Mouse Tracking Variables
 int startX, startY, tracking = 0;
@@ -399,16 +404,17 @@ void renderRearView(void) {
 
 	glUniform1i(fogToggled_uniformId, fogToggled);
 
-	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray,  cams[active_camera].get_xyzpos() };
+	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray,  cams[active_camera].get_xyzpos(), 
+		normalMap_loc, specularMap_loc, diffMapCount_loc };
 
 	// draw the tori where the stencil is not 1 
 	glEnable(GL_STENCIL_TEST);
 	glStencilFunc(GL_EQUAL, 0x1, 0x1);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
+	sleigh->render(rInfo);
 	skybox->render(rInfo);
 	terrain->render(rInfo);
-	sleigh->render(rInfo);
 	for (int i = 0; i < lampposts.size(); i++) lampposts[i].render(rInfo);
 	for (int i = 0; i < snowballs.size(); i++) snowballs[i].render(rInfo);
 	for (int i = 0; i < houses.size(); i++) houses[i].render(rInfo);
@@ -478,16 +484,17 @@ void renderMirror(void) {
 
 	glUniform1i(fogToggled_uniformId, fogToggled);
 
-	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray, cams[active_camera].get_xyzpos() };
+	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray,  cams[active_camera].get_xyzpos(),
+		normalMap_loc, specularMap_loc, diffMapCount_loc };
 
 	// draw the tori where the stencil is not 1
 	glEnable(GL_STENCIL_TEST);
 	glStencilFunc(GL_EQUAL, 0x1, 0x1);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
-	skybox->render_reflected(rInfo);
-	terrain->render_reflected(rInfo);
-	sleigh->render_reflected(rInfo);
+	sleigh->render(rInfo);
+	skybox->render(rInfo);
+	terrain->render(rInfo);
 	for (int i = 0; i < lampposts.size(); i++) lampposts[i].render_reflected(rInfo);
 	for (int i = 0; i < snowballs.size(); i++) snowballs[i].render_reflected(rInfo);
 	for (int i = 0; i < houses.size(); i++) houses[i].render_reflected(rInfo);
@@ -537,7 +544,8 @@ void renderMirror(void) {
 
 
 void renderShadows(void) {
-	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray, cams[active_camera].get_xyzpos() };
+	struct render_info rInfo = { shader, vm_uniformId, pvm_uniformId, normal_uniformId, textMode_uniformId, TextureArray,  cams[active_camera].get_xyzpos(),
+		normalMap_loc, specularMap_loc, diffMapCount_loc };
 	float mat[16];
 	float res[4];
 	glEnable(GL_DEPTH_TEST);
@@ -669,9 +677,9 @@ void renderScene(void) {
 
 	// draw the tori where the stencil is not 1
 	renderShadows();
+	sleigh->render(rInfo);
 	skybox->render(rInfo);
 	terrain->render(rInfo);
-	sleigh->render(rInfo);
 	for (int i = 0; i < lampposts.size(); i++) lampposts[i].render(rInfo);
 	for (int i = 0; i < snowballs.size(); i++) snowballs[i].render(rInfo);
 	for (int i = 0; i < houses.size(); i++) houses[i].render(rInfo);
@@ -709,7 +717,7 @@ void renderScene(void) {
 	pushMatrix(VIEW);
 	loadIdentity(VIEW);
 	ortho(m_viewport[0], m_viewport[0] + m_viewport[2] - 1, m_viewport[1], m_viewport[1] + m_viewport[3] - 1, -1, 1);
-	//lensflare->render(rInfo, flarePos[0], flarePos[1], m_viewport);
+	lensflare->render(rInfo, flarePos[0], flarePos[1], m_viewport);
 	//if (paused)
 		//RenderText(shaderText, "PAUSED", m_viewport[2] / 2.0f - 100.0f, m_viewport[3] / 2.0f + 25.0f, 1.0f, 1.0f, 1.0f, 1.01f);
 	//RenderText(shaderText, "LIVES: ", 25.0f, m_viewport[3] - 50.0f, 1.0f, 0.5f, 0.8f, 0.2f);
@@ -968,6 +976,9 @@ GLuint setupShaders() {
 	bump_loc = glGetUniformLocation(shader.getProgramIndex(), "bumpmap");
 	textMode_uniformId = glGetUniformLocation(shader.getProgramIndex(), "text_mode");
 	shadowMode_uniformId = glGetUniformLocation(shader.getProgramIndex(), "shadowMode");
+	normalMap_loc = glGetUniformLocation(shader.getProgramIndex(), "normalMap");
+	specularMap_loc = glGetUniformLocation(shader.getProgramIndex(), "specularMap");
+	diffMapCount_loc = glGetUniformLocation(shader.getProgramIndex(), "diffMapCount");
 
 
 	dirLPos_uniformId = glGetUniformLocation(shader.getProgramIndex(), "d_l_pos");
@@ -1048,7 +1059,7 @@ void init()
 	for (int i = 0; i < 6; i++) {
 		lampposts.push_back(Lamppost(5.0f * ((i % 3) - 1), 2.5f * ((i / 3) * 2 - 1)));
 	}
-	for (int i = 0; i < 8; i++) {
+	for (int i = 0; i < 1; i++) {
 		houses.push_back(House(5.0f * ((i % 4) - 1) - 2.5f, 4.0f * ((i / 4) * 2 - 1)));
 	}
 	sleigh->get_direction();

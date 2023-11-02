@@ -11,6 +11,9 @@ struct render_info {
 	GLint textMode_uniformId;
 	GLuint *TextureArray;
 	float *cam_pos;
+	GLint normalMap_loc;
+	GLint specularMap_loc;
+	GLint diffMapCount_loc;
 };
 
 #endif

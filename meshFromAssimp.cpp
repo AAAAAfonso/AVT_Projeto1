@@ -113,7 +113,7 @@ bool Import3DFromFile(const aiScene** sc, const std::string& pFile)
 }
 
 
-bool LoadGLTexturesTUs(const aiScene* scene, std::string modeldir)  // Create OGL textures objects and maps them to texture units.  
+bool LoadGLTexturesTUs(const aiScene* scene, std::string modeldir, GLuint*& textureIds, unordered_map<std::string, GLuint>& textureIdMap)  // Create OGL textures objects and maps them to texture units.  
 {
 	aiString path;	// filename
 	string filename;
@@ -150,7 +150,7 @@ bool LoadGLTexturesTUs(const aiScene* scene, std::string modeldir)  // Create OG
 	int numTextures = textureIdMap.size();
 	printf("numeros de mapas %d\n", numTextures);
 	if (numTextures) {
-		GLuint* textureIds = new GLuint[numTextures];
+		textureIds = new GLuint[numTextures];
 		glGenTextures(numTextures, textureIds); /* Texture name generation */
 
 		/* get iterator */
@@ -161,14 +161,12 @@ bool LoadGLTexturesTUs(const aiScene* scene, std::string modeldir)  // Create OG
 		for (int i = 0; itr != textureIdMap.end(); ++i, ++itr)
 		{
 			filename = (*itr).first;  // get filename
-			glActiveTexture(GL_TEXTURE0 + i);
 			Texture2D_Loader(textureIds, filename.c_str(), i);  //it already performs glBindTexture(GL_TEXTURE_2D, textureIds[i])
 			(*itr).second = i;	  // save texture unit for filename in map
 			//printf("textura = %s  TU = %d\n", filename.c_str(), i);
 		}
 
 		//Cleanup
-		delete[] textureIds;
 	}
 	return true;
 }
@@ -195,7 +193,7 @@ void color4_to_float4(const aiColor4D* c, float f[4])
 	f[3] = c->a;
 }
 
-vector<struct MyMesh> createMeshFromAssimp(const aiScene* sc, const std::string modeldir) {
+vector<struct MyMesh> createMeshFromAssimp(const aiScene* sc, const std::string modeldir, GLuint*& textureIds) {
 
 	vector<struct MyMesh> myMeshes;
 	struct MyMesh aMesh;
@@ -203,7 +201,10 @@ vector<struct MyMesh> createMeshFromAssimp(const aiScene* sc, const std::string 
 
 	printf("Cena: numero total de malhas = %d\n", sc->mNumMeshes);
 
-	LoadGLTexturesTUs(sc, modeldir); //it creates the unordered map which maps image filenames to texture units TU
+	unordered_map<std::string, GLuint> textureIdMap;
+
+
+	LoadGLTexturesTUs(sc, modeldir, textureIds, textureIdMap); //it creates the unordered map which maps image filenames to texture units TU
 
 	// For each mesh
 	for (unsigned int n = 0; n < sc->mNumMeshes; ++n)
